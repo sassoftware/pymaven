@@ -28,9 +28,9 @@ def read_file(filename):
 
 
 setup(
-    name="libmaven",
-    version=imp.load_source("libmaven.constants",
-                            "libmaven/constants.py").get_version(),
+    name="pymaven",
+    version=imp.load_source("pymaven.constants",
+                            "pymaven/constants.py").get_version(),
     description="Python access to maven",
     author="Walter Scheper",
     author_email="Walter.Scheper@sas.com",

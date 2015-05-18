@@ -17,9 +17,9 @@
 
 import unittest
 
-from libmaven import Artifact
-from libmaven import VersionRange
-from libmaven.errors import ArtifactParseError
+from pymaven import Artifact
+from pymaven import VersionRange
+from pymaven.errors import ArtifactParseError
 
 
 class TestArtifact(unittest.TestCase):
