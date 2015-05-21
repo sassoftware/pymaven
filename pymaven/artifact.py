@@ -33,6 +33,7 @@ MAVEN_COORDINATE_RE = re.compile(
     r':(?P<version>[^:])'
     )
 
+
 class Artifact(object):
     """Represents an artifact within a maven repository."""
     def __init__(self, group_id, artifact_id, version, type=None,
@@ -74,7 +75,8 @@ class Artifact(object):
                             result = cmp(self.classifier, other.classifier)
 
                     if result == 0:
-                        result = cmp(self.version.version, other.version.version)
+                        result = cmp(self.version.version,
+                                     other.version.version)
 
         return result
 
@@ -110,7 +112,8 @@ class Artifact(object):
     def fromstring(coordinate):
         """Create an artifact from a string coordinate
 
-        :param str coordinate: match the form group:artifact[:packaging[:classifier]]:version
+        :param str coordinate: match the form
+            group:artifact[:packaging[:classifier]]:version
         :return: Artifact matching the coordinate
         :rtype: pymaven.Artifact
         """
