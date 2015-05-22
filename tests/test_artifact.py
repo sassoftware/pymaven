@@ -99,13 +99,13 @@ class TestArtifact(unittest.TestCase):
         assert not a != a
 
         # compare to non-artifact
-        assert a < "aardvark"
+        assert a > "aardvark"
         assert a != "aardvark"
-        assert "aardvark" > a
+        assert "aardvark" < a
         assert "aardvark" != a
-        assert a < 10
+        assert a > 10
         assert a != 10
-        assert 10 > a
+        assert 10 < a
         assert 10 != a
 
     def test_tostring(self):

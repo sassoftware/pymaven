@@ -55,7 +55,7 @@ class Artifact(object):
             return 0
 
         if not isinstance(other, Artifact):
-            return -1
+            return 1
 
         result = cmp(self.group_id, other.group_id)
         if result == 0:
