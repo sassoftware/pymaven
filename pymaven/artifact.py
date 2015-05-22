@@ -60,7 +60,7 @@ class Artifact(object):
             self.version = parts[4]
 
         if self.version:
-            self.version = VersionRange.fromstring(self.version)
+            self.version = VersionRange(self.version)
 
     def __cmp__(self, other):
         if self is other:

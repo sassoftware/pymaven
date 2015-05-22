@@ -18,7 +18,6 @@
 import unittest
 
 from pymaven import Artifact
-from pymaven import VersionRange
 from pymaven.errors import ArtifactParseError
 
 
@@ -37,7 +36,6 @@ class TestArtifact(unittest.TestCase):
             self.assertRaises(ArtifactParseError, Artifact, input)
 
     def test_path(self):
-        v1 = VersionRange.fromstring("1")
         test_pairs = (
             ("foo.bar:baz", "/foo/bar/baz"),
             ("foo.bar:baz:1", "/foo/bar/baz/1/baz-1.jar"),
