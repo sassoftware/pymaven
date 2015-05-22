@@ -36,25 +36,42 @@ MAVEN_COORDINATE_RE = re.compile(
 
 class Artifact(object):
     """Represents an artifact within a maven repository."""
-    def __init__(self, group_id, artifact_id, version, type=None,
-                 scope=None, classifier=None):
-        if type is None:
-            type = "jar"
+    def __init__(self, coordinates):
+        self._coordinates = coordinates
+        self.version = None
+        self.type = "jar"
+        self.classifier = None
 
-        self.group_id = group_id
-        self.artifact_id = artifact_id
-        if isinstance(version, str):
-            version = VersionRange.fromstring(version)
-        self.version = version
-        self.type = type
-        self.scope = scope
-        self.classifier = classifier
+        parts = coordinates.split(':')
+        length = len(parts)
+        if length < 2 or length > 5:
+            raise ArtifactParseError(
+                "Too many items in coordinates: '%s'" % coordinates)
+
+        self.group_id, self.artifact_id = parts[:2]
+        if length == 3:
+            self.version = parts[2]
+        elif length == 4:
+            self.type = parts[2]
+            self.version = parts[3]
+        elif length == 5:
+            self.type = parts[2]
+            self.classifier = parts[3]
+            self.version = parts[4]
+
+        if self.version:
+            self.version = VersionRange.fromstring(self.version)
 
     def __cmp__(self, other):
         if self is other:
             return 0
 
         if not isinstance(other, Artifact):
+            if isinstance(other, basestring):
+                try:
+                    return cmp(self, Artifact(other))
+                except ArtifactParseError:
+                    pass
             return 1
 
         result = cmp(self.group_id, other.group_id)
@@ -81,53 +98,29 @@ class Artifact(object):
         return result
 
     def __str__(self):
-        s = ':'.join((self.group_id, self.artifact_id, self.type))
-        if self.classifier:
-            s += ':' + self.classifier
-        if self.version.version:
-            s += ':' + str(self.version.version)
-        else:
-            s += ':' + str(self.version)
-
-        if self.scope is not None:
-            s += ':' + self.scope
+        s = ':'.join((self.group_id, self.artifact_id))
+        if self.version:
+            s += ':' + self.type
+            if self.classifier:
+                s += ':' + self.classifier
+            s += ':' + str(self.version.version if self.version.version
+                           else self.vserion)
         return s
 
     def __repr__(self):
-        return "<pymaven.Artifact(%s, %s, %s, %s, %s, %s)" % (
-            self.group_id,
-            self.artifact_id,
-            self.version,
-            self.type,
-            self.scope,
-            self.classifier,
-            )
+        return "<pymaven.Artifact(%r)" % self._coordinates
 
     @property
     def coordinate(self):
-        return (self.group_id, self.artifact_id, self.version, self.type,
-                self.classifier)
-
-    @staticmethod
-    def fromstring(coordinate):
-        """Create an artifact from a string coordinate
-
-        :param str coordinate: match the form
-            group:artifact[:packaging[:classifier]]:version
-        :return: Artifact matching the coordinate
-        :rtype: pymaven.Artifact
-        """
-        m = MAVEN_COORDINATE_RE.match(coordinate)
-        if not m:
-            raise ArtifactParseError("Invalid coordinate: %s" % coordinate)
-        return Artifact(**m.groupdict())
+        return self._coordinates
 
     @property
     def path(self):
         path = "/%s/%s" % (self.group_id.replace('.', '/'), self.artifact_id)
 
-        version = self.version.version
-        if version:
+        if self.version:
+            version = (self.version.version if self.version.version
+                       else self.version)
             path += "/%s/%s-%s" % (version, self.artifact_id, version)
             if self.classifier:
                 path += "-%s" % self.classifier

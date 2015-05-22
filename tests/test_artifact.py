@@ -31,67 +31,55 @@ class TestArtifact(unittest.TestCase):
         assert not a1 == a2
         assert a1 != a2
 
-    def test_fromstring(self):
-        v1 = VersionRange.fromstring("1")
-        test_pairs = (
-            ("foo:bar:1", ("foo", "bar", v1, "jar", None)),
-            ("foo:bar:pkg:1", ("foo", "bar", v1, "pkg", None)),
-            ("foo:bar:pkg:sources:1", ("foo", "bar", v1, "pkg", "sources")),
-            ("foo:bar:pkg:javadoc:1", ("foo", "bar", v1, "pkg", "javadoc")),
-            )
-
-        for input, expected in test_pairs:
-            artifact = Artifact.fromstring(input)
-            assert artifact.coordinate == expected
-
     def test_invalid_coordinates(self):
-        tests = ("foo:bar", "foo")
+        tests = ("foo", "1:2:3:4:5:6")
         for input in tests:
-            self.assertRaises(ArtifactParseError, Artifact.fromstring, input)
+            self.assertRaises(ArtifactParseError, Artifact, input)
 
     def test_path(self):
         v1 = VersionRange.fromstring("1")
         test_pairs = (
-            ("foo:bar:1", "/foo/bar/1/bar-1.jar"),
-            ("foo:bar:pkg:1", "/foo/bar/1/bar-1.pkg"),
-            ("foo:bar:pkg:sources:1", "/foo/bar/1/bar-1-sources.pkg"),
-            ("foo:bar:pkg:javadoc:1", "/foo/bar/1/bar-1-javadoc.pkg"),
+            ("foo.bar:baz", "/foo/bar/baz"),
+            ("foo.bar:baz:1", "/foo/bar/baz/1/baz-1.jar"),
+            ("foo.bar:baz:pkg:1", "/foo/bar/baz/1/baz-1.pkg"),
+            ("foo.bar:baz:pkg:sources:1", "/foo/bar/baz/1/baz-1-sources.pkg"),
+            ("foo.bar:baz:pkg:javadoc:1", "/foo/bar/baz/1/baz-1-javadoc.pkg"),
             )
 
         for input, expected in test_pairs:
-            artifact = Artifact.fromstring(input)
+            artifact = Artifact(input)
             assert artifact.path == expected
 
     def test_comparison(self):
         test_pairs = (
             # compare group id
-            (Artifact("f", "a", "1"), Artifact("g", "a", "1")),
+            (Artifact("f:a:1"), Artifact("g:a:1")),
             # compare artifact id
-            (Artifact("g", "a", "1"), Artifact("g", "b", "1")),
+            (Artifact("g:a:1"), Artifact("g:b:1")),
             # compare type
-            (Artifact("g", "a", "1"), Artifact("g", "a", "1", "pom")),
-            (Artifact("g", "a", "1", "jar"), Artifact("g", "a", "1", "pom")),
-            (Artifact("g", "a", "1", "pom"), Artifact("g", "a", "1", "war")),
+            (Artifact("g:a:1"), Artifact("g:a:pom:1")),
+            (Artifact("g:a:jar:1"), Artifact("g:a:pom:1")),
+            (Artifact("g:a:pom:1"), Artifact("g:a:war:1")),
             # compare classifier
-            (Artifact("g", "a", "1", classifier="c"), Artifact("g", "a", "1")),
-            (Artifact("g", "a", "1", classifier="a"), Artifact("g", "a", "1", classifier="c")),
+            (Artifact("g:a:jar:c:1"), Artifact("g:a:1")),
+            (Artifact("g:a:jar:a:1"), Artifact("g:a:jar:c:1")),
             # compare version
-            (Artifact("g", "a", "1"), Artifact("g", "a", "2")),
+            (Artifact("g:a:1"), Artifact("g:a:2")),
             # mask version
-            (Artifact("f", "a", "2"), Artifact("g", "a", "1")),
-            (Artifact("g", "a", "2"), Artifact("g", "b", "1")),
-            (Artifact("g", "a", "2"), Artifact("g", "a", "1", "pom")),
-            (Artifact("g", "a", "2", "jar"), Artifact("g", "a", "1", "pom")),
-            (Artifact("g", "a", "2", "pom"), Artifact("g", "a", "1", "war")),
-            (Artifact("g", "a", "2", classifier="c"), Artifact("g", "a", "1")),
-            (Artifact("g", "a", "2", classifier="a"), Artifact("g", "a", "1", classifier="c")),
+            (Artifact("f:a:2"), Artifact("g:a:1")),
+            (Artifact("g:a:2"), Artifact("g:b:1")),
+            (Artifact("g:a:2"), Artifact("g:a:pom:1")),
+            (Artifact("g:a:jar:2"), Artifact("g:a:pom:1")),
+            (Artifact("g:a:pom:2"), Artifact("g:a:war:1")),
+            (Artifact("g:a:jar:c:2"), Artifact("g:a:1")),
+            (Artifact("g:a:jar:a:2"), Artifact("g:a:jar:c:1")),
             )
 
         for pair in test_pairs:
             self._assertArtifactOrder(*pair)
 
         # verify identity
-        a = Artifact("foo", "bar", "1")
+        a = Artifact("foo:bar:1")
         assert not a < a
         assert a <= a
         assert a >= a
@@ -109,15 +97,14 @@ class TestArtifact(unittest.TestCase):
         assert 10 != a
 
     def test_tostring(self):
-        a = Artifact("foo", "bar", "1")
+        a = Artifact("foo:bar")
+        assert str(a) == "foo:bar"
+
+        a = Artifact("foo:bar:1")
         assert str(a) == "foo:bar:jar:1"
 
-        a = Artifact("foo", "bar", "1", "pom")
+        a = Artifact("foo:bar:pom:1")
         assert str(a) == "foo:bar:pom:1"
 
-        a = Artifact("foo", "bar", "1", "pom", classifier="sources")
+        a = Artifact("foo:bar:pom:sources:1")
         assert str(a) == "foo:bar:pom:sources:1"
-
-        a = Artifact("foo", "bar", "1", "pom", classifier="sources",
-                     scope="compile")
-        assert str(a) == "foo:bar:pom:sources:1:compile"
