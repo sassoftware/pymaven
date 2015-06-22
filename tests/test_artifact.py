@@ -37,11 +37,11 @@ class TestArtifact(unittest.TestCase):
 
     def test_path(self):
         test_pairs = (
-            ("foo.bar:baz", "/foo/bar/baz"),
-            ("foo.bar:baz:1", "/foo/bar/baz/1/baz-1.jar"),
-            ("foo.bar:baz:pkg:1", "/foo/bar/baz/1/baz-1.pkg"),
-            ("foo.bar:baz:pkg:sources:1", "/foo/bar/baz/1/baz-1-sources.pkg"),
-            ("foo.bar:baz:pkg:javadoc:1", "/foo/bar/baz/1/baz-1-javadoc.pkg"),
+            ("foo.bar:baz", "foo/bar/baz"),
+            ("foo.bar:baz:1", "foo/bar/baz/1/baz-1.jar"),
+            ("foo.bar:baz:pkg:1", "foo/bar/baz/1/baz-1.pkg"),
+            ("foo.bar:baz:pkg:sources:1", "foo/bar/baz/1/baz-1-sources.pkg"),
+            ("foo.bar:baz:pkg:javadoc:1", "foo/bar/baz/1/baz-1-javadoc.pkg"),
             )
 
         for input, expected in test_pairs:

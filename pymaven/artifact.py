@@ -120,7 +120,7 @@ class Artifact(object):
 
     @property
     def path(self):
-        path = "/%s/%s" % (self.group_id.replace('.', '/'), self.artifact_id)
+        path = "%s/%s" % (self.group_id.replace('.', '/'), self.artifact_id)
 
         if self.version:
             version = (self.version.version if self.version.version
