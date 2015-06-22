@@ -97,6 +97,10 @@ class Artifact(object):
 
         return result
 
+    def __hash__(self):
+        return hash((self._coordinates, self.version, self.type,
+                     self.classifier))
+
     def __str__(self):
         s = ':'.join((self.group_id, self.artifact_id))
         if self.version:
