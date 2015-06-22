@@ -20,13 +20,41 @@ Exceptions used by pymaven
 """
 
 
-class ArtifactParseError(Exception):
+# Generic errors
+class PymavenError(Exception):
+    """Base class for all errrors in PymavenError
+
+    Do not raise directly, but make a subclass
+    """
+    pass
+
+
+# Maven repo errors
+class RepositoryError(PymavenError):
+    """Generic errors raised by maven repositories"""
+
+
+class MissingPathError(RepositoryError):
+    """Raised when a repository accesses a path that does not exist"""
+
+
+# Maven Client errors
+class ClientError(PymavenError):
+    """Generic erors raied by maven clients"""
+
+
+# Parser errors
+class ParseError(PymavenError):
+    """Generic error in parsing a format"""
+
+
+class ArtifactParseError(ParseError):
     """Raised when an error is encountered parsing maven coordinates"""
 
 
-class RestrictionParseError(Exception):
+class RestrictionParseError(ParseError):
     """Raised when an error is encountered parsing a restriction spec"""
 
 
-class VersionRangeParseError(Exception):
+class VersionRangeParseError(ParseError):
     """Raised when an error is encountered parsing a range spec"""
