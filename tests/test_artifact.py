@@ -42,6 +42,7 @@ class TestArtifact(unittest.TestCase):
             ("foo.bar:baz:pkg:1", "foo/bar/baz/1/baz-1.pkg"),
             ("foo.bar:baz:pkg:sources:1", "foo/bar/baz/1/baz-1-sources.pkg"),
             ("foo.bar:baz:pkg:javadoc:1", "foo/bar/baz/1/baz-1-javadoc.pkg"),
+            ("foo.bar:baz:[1,2)", "foo/bar/baz"),
             )
 
         for input, expected in test_pairs:

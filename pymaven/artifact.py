@@ -122,9 +122,8 @@ class Artifact(object):
     def path(self):
         path = "%s/%s" % (self.group_id.replace('.', '/'), self.artifact_id)
 
-        if self.version:
-            version = (self.version.version if self.version.version
-                       else self.version)
+        if self.version and self.version.version:
+            version = self.version.version
             path += "/%s/%s-%s" % (version, self.artifact_id, version)
             if self.classifier:
                 path += "-%s" % self.classifier
