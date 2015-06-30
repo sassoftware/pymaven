@@ -26,7 +26,14 @@ class PymavenError(Exception):
 
     Do not raise directly, but make a subclass
     """
-    pass
+    _template = None
+
+    def __init__(self, *args, **kwargs):
+        if self._template is None:
+            super(PymavenError, self).__init__(*args, **kwargs)
+        else:
+            super(PymavenError, self).__init__(
+                self._template.format(*args, **kwargs))
 
 
 # Maven repo errors
@@ -36,11 +43,17 @@ class RepositoryError(PymavenError):
 
 class MissingPathError(RepositoryError):
     """Raised when a repository accesses a path that does not exist"""
+    _template = "No such directory: {0}"
 
 
 # Maven Client errors
 class ClientError(PymavenError):
     """Generic erors raied by maven clients"""
+
+
+class MissingArtifactError(ClientError):
+    """Raised when a client tries to fetch an artifact that does not exist"""
+    _template = "No artifact found matching '{0}'"
 
 
 # Parser errors
