@@ -36,17 +36,17 @@ MAVEN_COORDINATE_RE = re.compile(
 
 class Artifact(object):
     """Represents an artifact within a maven repository."""
-    def __init__(self, coordinates):
-        self._coordinates = coordinates
+    def __init__(self, coordinate):
+        self._coordinate = coordinate
         self.version = None
         self.type = "jar"
         self.classifier = None
 
-        parts = coordinates.split(':')
+        parts = coordinate.split(':')
         length = len(parts)
         if length < 2 or length > 5:
             raise ArtifactParseError(
-                "Too many items in coordinates: '%s'" % coordinates)
+                "Too many items in coordinate: '%s'" % coordinate)
 
         self.group_id, self.artifact_id = parts[:2]
         if length == 3:
@@ -98,7 +98,7 @@ class Artifact(object):
         return result
 
     def __hash__(self):
-        return hash((self._coordinates, self.version, self.type,
+        return hash((self._coordinate, self.version, self.type,
                      self.classifier))
 
     def __str__(self):
@@ -112,11 +112,11 @@ class Artifact(object):
         return s
 
     def __repr__(self):
-        return "<pymaven.Artifact(%r)" % self._coordinates
+        return "<pymaven.Artifact(%r)" % self._coordinate
 
     @property
     def coordinate(self):
-        return self._coordinates
+        return self._coordinate
 
     @property
     def path(self):

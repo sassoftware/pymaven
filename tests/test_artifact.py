@@ -30,7 +30,7 @@ class TestArtifact(unittest.TestCase):
         assert not a1 == a2
         assert a1 != a2
 
-    def test_invalid_coordinates(self):
+    def test_invalid_coordinate(self):
         tests = ("foo", "1:2:3:4:5:6")
         for input in tests:
             self.assertRaises(ArtifactParseError, Artifact, input)

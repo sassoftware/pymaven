@@ -62,7 +62,7 @@ class ParseError(PymavenError):
 
 
 class ArtifactParseError(ParseError):
-    """Raised when an error is encountered parsing maven coordinates"""
+    """Raised when an error is encountered parsing maven coordinate"""
 
 
 class RestrictionParseError(ParseError):
