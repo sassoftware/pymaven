@@ -36,11 +36,16 @@ MAVEN_COORDINATE_RE = re.compile(
 
 class Artifact(object):
     """Represents an artifact within a maven repository."""
+
+    __slots__ = ("group_id", "artifact_id", "version", "type", "classifier",
+                 "contents", "_coordinate")
+
     def __init__(self, coordinate):
         self._coordinate = coordinate
         self.version = None
         self.type = "jar"
         self.classifier = None
+        self.contents = None
 
         parts = coordinate.split(':')
         length = len(parts)
