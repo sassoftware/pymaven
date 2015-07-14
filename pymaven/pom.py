@@ -41,7 +41,7 @@ class Pom(Artifact):
     RANGE_CHARS = ('[', '(', ']', ')')
 
     __slots__ = ("_client", "_parent", "_dep_mgmt", "_dependencies",
-                 "_properties", "_artifacts", "_xml")
+                 "_properties", "_xml")
 
     def __init__(self, coordinate, client):
         super(Pom, self).__init__(coordinate)
@@ -58,7 +58,6 @@ class Pom(Artifact):
         self._dep_mgmt = None
         self._dependencies = None
         self._properties = None
-        self._artifacts = NotImplemented
 
     def _find_compile_deps(self, xml=None):
         if xml is None:
