@@ -119,19 +119,17 @@ class TestPom(unittest.TestCase):
         pom = Pom("com.test:use:1", client)
 
         dep_mgmt = pom.dependency_management
-        assert ("1.0.0", "import") == dep_mgmt[("com.test", "bom")]
-        assert ("2.0.0", "import") == dep_mgmt[("com.test", "bom2")]
-        assert ("2.0.0", None) == dep_mgmt[("com.test", "project1")]
-        assert ("1.0.0", None) == dep_mgmt[("com.test", "project2")]
+        assert ("1.0.0", "import", False) == dep_mgmt[("com.test", "bom")]
+        assert ("2.0.0", "import", False) == dep_mgmt[("com.test", "bom2")]
+        assert ("2.0.0", None, True) == dep_mgmt[("com.test", "project1")]
+        assert ("1.0.0", None, False) == dep_mgmt[("com.test", "project2")]
 
     def test_compile_deps(self):
-        client = self._mock_client(COM_TEST_PROJECT1, COM_TEST_PROJECT2)
-        pom = Pom("com.test:project1:1.0.0", client)
+        client = self._mock_client(COM_TEST_USE, COM_TEST_BOM, COM_TEST_BOM2,
+                                   COM_TEST_PROJECT1, COM_TEST_PROJECT2)
+        pom = Pom("com.test:use:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "1.0.0" == deps[0].version
+        assert len(pom.dependencies) == 2
 
     def test_dependency_version_range(self):
         client = self._mock_client(COM_TEST_PROJECT3)
@@ -303,13 +301,6 @@ COM_TEST_PROJECT1 = """\
     <groupId>com.test</groupId>
     <artifactId>project1</artifactId>
     <version>1.0.0</version>
-    <dependencies>
-        <dependency>
-            <groupId>com.test</groupId>
-            <artifactId>project2</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-    </dependencies>
 </project>
 """
 
@@ -390,6 +381,7 @@ COM_TEST_BOM2 = """\
         <groupId>com.test</groupId>
         <artifactId>project1</artifactId>
         <version>${project1Version}</version>
+        <optional>true</optional>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -466,6 +458,7 @@ COM_TEST_USE = """\
     <dependency>
       <groupId>com.test</groupId>
       <artifactId>project2</artifactId>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 </project>

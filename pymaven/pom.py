@@ -67,21 +67,30 @@ class Pom(Artifact):
         for elem in xml.findall("dependencies/dependency"):
             group = self._replace_properties(elem.findtext("groupId"))
             artifact = self._replace_properties(elem.findtext("artifactId"))
-            optional = elem.findtext("optional")
 
-            if optional is None or optional == "false":
+            if (group, artifact) in self.dependency_management:
+                spec, scope, optional = \
+                    self.dependency_management[(group, artifact)]
+            else:
+                spec = scope = optional = None
+
+            if elem.findtext("optional") is not None:
+                optional = (elem.findtext("optional") == "true")
+
+
+            if not optional:
                 # this is a required dependency
-                if (group, artifact) in self.dependency_management:
-                    spec, scope = self.dependency_management[(group, artifact)]
-                else:
-                    spec = elem.findtext("version")
+                if elem.findtext("version") is not None:
+                    spec = self._replace_properties(elem.findtext("version"))
+
+                if spec is None:
+                    # FIXME: Default to the latest released version if no
+                    # version is specified. I'm not sure if this is the
+                    # correct behavior, but let's try it for now.
+                    spec = 'latest.release'
+
+                if elem.findtext("scope") is not None:
                     scope = elem.findtext("scope")
-                    if spec is None:
-                        # FIXME: Default to the latest released version if no
-                        # version is specified. I'm not sure if this is the
-                        # correct behavior, but let's try it for now.
-                        spec = 'latest.release'
-                    spec = self._replace_properties(spec)
 
                 if scope in (None, "compile", "import"):
                     if any(ch for ch in spec if ch in self.RANGE_CHARS):
@@ -124,10 +133,11 @@ class Pom(Artifact):
             version = self._replace_properties(elem.findtext("version"))
 
             scope = elem.findtext("scope")
+            optional = (elem.findtext("optional") == "true")
             if scope is not None and scope == "import":
                 import_pom = self._pom_factory(group, artifact, version)
                 import_mgmt.update(import_pom.dependency_management)
-            dep_mgmt[(group, artifact)] = (version, scope)
+            dep_mgmt[(group, artifact)] = (version, scope, optional)
 
         import_mgmt.update(dep_mgmt)
         return import_mgmt
@@ -136,7 +146,8 @@ class Pom(Artifact):
         dependencies = set()
         # process dependency management to find imports
         for group, artifact in self.dependency_management:
-            version, scope = self.dependency_management[(group, artifact)]
+            version, scope, optional = \
+                self.dependency_management[(group, artifact)]
             if scope == "import":
                 dependencies.add(self._pom_factory(group, artifact, version))
 
@@ -286,7 +297,6 @@ class Pom(Artifact):
     @memoize("_dep_mgmt")
     def dependency_management(self):
         dep_mgmt = {}
-        import_mgmt = {}
 
         # add parent's block first so we can override it
         if self.parent is not None:
