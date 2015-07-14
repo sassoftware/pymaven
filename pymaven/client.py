@@ -305,8 +305,9 @@ class HttpRepository(AbstractRepository):
     def _listdir(self, path):
         uri = posixpath.join(path, "maven-metadata.xml")
         res = self._get(uri)
+        with res as fh:
+            metadata = ElementTree.parse(fh)
 
-        metadata = ElementTree.fromstring(res.text)
         return [elem.text.strip()
                 for elem in metadata.findall("versioning/versions/version")
                 if elem is not None]

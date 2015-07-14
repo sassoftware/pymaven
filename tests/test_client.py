@@ -89,7 +89,9 @@ class TestMavenClient(unittest.TestCase):
 @mock.patch("pymaven.client.HttpRepository._request")
 class TestHttpRespository(unittest.TestCase):
     def test_listdir(self, _request):
-        _request.return_value = mock.MagicMock(text=SIMPLE_METADATA)
+        res = mock.MagicMock(spec=Struct)
+        res.__enter__.return_value = StringIO(SIMPLE_METADATA)
+        _request.side_effect = [res, requests.exceptions.HTTPError]
         expected = ["1.0-SNAPSHOT",
                     "1.0",
                     "3.0-SNAPSHOT",
@@ -99,12 +101,12 @@ class TestHttpRespository(unittest.TestCase):
         repo = HttpRepository("http://foo.com/repo")
         actual = repo.listdir("foo/bar")
         assert expected == actual
-
-        _request.side_effect = requests.exceptions.HTTPError
         self.assertRaises(MissingPathError, repo.listdir, "/baz")
 
     def test_get_versions(self, _request):
-        _request.return_value = mock.MagicMock(text=SIMPLE_METADATA)
+        res = mock.MagicMock(spec=Struct)
+        res.__enter__.return_value = StringIO(SIMPLE_METADATA)
+        _request.return_value = res
 
         repo = HttpRepository("http://foo.com/repo")
         for input, expected in (
@@ -125,6 +127,8 @@ class TestHttpRespository(unittest.TestCase):
                 ):
             actual = repo.get_versions(input)
             assert expected == actual, "HttpRepository.get_versions(%s)" % input
+            # reset res contents
+            res.__enter__.return_value.seek(0)
 
     def test_open(self, _request):
         res = mock.MagicMock(spec=Struct)
