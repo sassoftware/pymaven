@@ -246,8 +246,7 @@ class Pom(Artifact):
             result = PROPERTY_RE.sub(subfunc, result)
         return result.strip()
 
-    @staticmethod
-    def pick_version(spec, artifacts):
+    def pick_version(self, spec, artifacts):
         """Pick a version from *versions* according to the spec
 
         Convert spec into maven version range and return the first version in
