@@ -46,23 +46,26 @@ class Struct(object):
     """
     def __init__(self):
         self.status_code = None
-        self.contents = None
+        self.content = None
         self._json = None
 
     def __enter__(self):
-        return self.contents
+        self._content = open(self.content, 'rb')
+        return self._content
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.contents.seek(0)
+        self._content.close()
 
     @property
+    @utils.memoize("_json")
     def json(self):
-        if self._json is None:
-            self._json = json.loads(self.contents.read().encode("utf-8"))
-        return self._json
+        with self as fh:
+            return json.load(fh)
 
-    def iter_contents(self, size=None):
-        return (chunk for chunk in self.contents.read(size))
+    def iter_content(self, size=None):
+        with self as fh:
+            for chunk in fh.read(size):
+                yield chunk
 
 
 class Cache(object):
@@ -140,7 +143,7 @@ class Cache(object):
     def _get(self, hpath, dhpath):
         if os.path.exists(hpath) and os.path.exists(dhpath):
             data = json.load(open(dhpath))
-            data["contents"] = open(hpath)
+            data["content"] = hpath
             res = Struct()
             for k, v in data.iteritems():
                 setattr(res, k, v)
@@ -203,7 +206,7 @@ class MavenClient(object):
         query = Artifact(coordinate)
         for repo in self._repos:
             if repo.exists(query.path):
-                query.contents = repo.open(query.path)
+                query.content = repo.open(query.path)
                 return query
         else:
             raise MissingArtifactError(coordinate)

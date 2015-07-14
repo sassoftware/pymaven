@@ -46,8 +46,8 @@ class Pom(Artifact):
     def __init__(self, coordinate, client):
         super(Pom, self).__init__(coordinate)
         self._client = client
-        with client.get_artifact(self._coordinate) as ah:
-            xml = ah.read()
+        with client.get_artifact(self._coordinate).contents as fh:
+            xml = fh.read()
         self._xml = etree.fromstring(
             STRIP_NAMESPACE_RE.sub('<project>', xml[xml.find('<project'):], 1),
             parser=POM_PARSER,

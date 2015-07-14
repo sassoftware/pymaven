@@ -76,7 +76,7 @@ class TestMavenClient(unittest.TestCase):
 
         client = MavenClient("/maven")
         actual = client.get_artifact("foo:bar:2.0.0")
-        assert "some data" == actual.contents.read()
+        assert "some data" == actual.content.read()
         _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
         _repo.open.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
 
@@ -127,8 +127,8 @@ class TestHttpRespository(unittest.TestCase):
             assert expected == actual, "HttpRepository.get_versions(%s)" % input
 
     def test_open(self, _request):
-        res = Struct()
-        res.contents = StringIO(SIMPLE_METADATA)
+        res = mock.MagicMock(spec=Struct)
+        res.__enter__.return_value = StringIO(SIMPLE_METADATA)
         _request.side_effect = [res, requests.exceptions.HTTPError]
 
         repo = HttpRepository("http://foo.com/repo")

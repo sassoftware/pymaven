@@ -33,9 +33,10 @@ class TestPom(unittest.TestCase):
         client = mock.MagicMock(spec=MavenClient)
         side_effect = []
         for arg in args:
-            s = Struct()
-            s.contents = StringIO(arg)
-            side_effect.append(s)
+            a = mock.MagicMock(spec=Artifact)
+            a.contents = mock.MagicMock(spec=Struct)
+            a.contents.__enter__.return_value = StringIO(arg)
+            side_effect.append(a)
 
         client.get_artifact.side_effect = side_effect
         return client
