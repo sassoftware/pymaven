@@ -76,7 +76,7 @@ class TestMavenClient(unittest.TestCase):
 
         client = MavenClient("/maven")
         actual = client.get_artifact("foo:bar:2.0.0")
-        assert "some data" == actual.content.read()
+        assert "some data" == actual.contents.read()
         _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
         _repo.open.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
 

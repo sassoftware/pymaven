@@ -206,7 +206,7 @@ class MavenClient(object):
         query = Artifact(coordinate)
         for repo in self._repos:
             if repo.exists(query.path):
-                query.content = repo.open(query.path)
+                query.contents = repo.open(query.path)
                 return query
         else:
             raise MissingArtifactError(coordinate)
