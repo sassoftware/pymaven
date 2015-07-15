@@ -369,3 +369,19 @@ class Pom(Artifact):
                 for prop in profile_properties.iterchildren():
                     properties[prop.tag] = prop.text
         return properties
+
+    def get_dependencies(self):
+        return set(self.iter_dependencies())
+
+    def get_build_dependencies(self):
+        return set(self.iter_build_dependencies())
+
+    def iter_dependencies(self):
+        return itertools.chain(*self.dependencies.values())
+
+    def iter_build_dependencies(self):
+        return itertools.chain(
+            self.dependencies.get("compile", set()),
+            self.dependencies.get("import", set()),
+            self.dependencies.get("relocations", set()),
+            )
