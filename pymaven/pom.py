@@ -15,6 +15,7 @@
 #
 
 
+import itertools
 import re
 
 from lxml import etree
@@ -59,10 +60,11 @@ class Pom(Artifact):
         self._dependencies = None
         self._properties = None
 
-    def _find_compile_deps(self, xml=None):
+    def _find_deps(self, xml=None):
         if xml is None:
             xml = self._xml
-        dependencies = set()
+        dependencies = {}
+
         # find all non-optional, compile dependencies
         for elem in xml.findall("dependencies/dependency"):
             group = self._replace_properties(elem.findtext("groupId"))
@@ -76,7 +78,8 @@ class Pom(Artifact):
 
             if elem.findtext("optional") is not None:
                 optional = (elem.findtext("optional") == "true")
-
+            else:
+                optional = False
 
             if not optional:
                 # this is a required dependency
@@ -92,31 +95,34 @@ class Pom(Artifact):
                 if elem.findtext("scope") is not None:
                     scope = elem.findtext("scope")
 
-                if scope in (None, "compile", "import"):
-                    if any(ch for ch in spec if ch in self.RANGE_CHARS):
-                        available_versions = self._client.find_artifacts(
-                            "%s:%s" % (group, artifact))
-                        version = self.pick_version(spec, available_versions)
-                    elif spec.lower() in ("latest.release", "release",
-                                          "latest.integration", "latest"):
-                        metadata = self._client.get_maven_metadata(
-                            "%s:%s" % (group, artifact))
-                        metadata = etree.fromstring(metadata)
-                        if (spec.lower() == "latest.release"
-                                or spec.lower() == "release"):
-                            version = metadata.findtext("versioning/release")
-                        elif (spec.lower() == "latest.integration"
-                                or spec.lower() == "latest"):
-                            version = metadata.findtext("versioning/latest")
-                    else:
-                        version = spec
+                # if scope is None, then it should be "compile"
+                if scope is None:
+                    scope = "compile"
 
-                    if version is None:
-                        raise errors.MissingArtifactError(
-                            "%s:%s:%s" % (group, artifact, spec))
+                if any(ch for ch in spec if ch in self.RANGE_CHARS):
+                    available_versions = self._client.find_artifacts(
+                        "%s:%s" % (group, artifact))
+                    version = self.pick_version(spec, available_versions)
+                elif spec.lower() in ("latest.release", "release",
+                                      "latest.integration", "latest"):
+                    metadata = self._client.get_maven_metadata(
+                        "%s:%s" % (group, artifact))
+                    metadata = etree.fromstring(metadata)
+                    if (spec.lower() == "latest.release"
+                            or spec.lower() == "release"):
+                        version = metadata.findtext("versioning/release")
+                    elif (spec.lower() == "latest.integration"
+                            or spec.lower() == "latest"):
+                        version = metadata.findtext("versioning/latest")
+                else:
+                    version = spec
 
-                    dependencies.add(
-                        self._pom_factory(group, artifact, version))
+                if version is None:
+                    raise errors.MissingArtifactError(
+                        "%s:%s:%s" % (group, artifact, spec))
+
+                dependencies.setdefault(scope, set()).add(
+                    self._pom_factory(group, artifact, version))
 
         return dependencies
 
@@ -143,13 +149,14 @@ class Pom(Artifact):
         return import_mgmt
 
     def _find_import_deps(self):
-        dependencies = set()
+        dependencies = {}
         # process dependency management to find imports
         for group, artifact in self.dependency_management:
             version, scope, optional = \
                 self.dependency_management[(group, artifact)]
             if scope == "import":
-                dependencies.add(self._pom_factory(group, artifact, version))
+                dependencies.setdefault(scope, set()).add(
+                    self._pom_factory(group, artifact, version))
 
         return dependencies
 
@@ -215,7 +222,7 @@ class Pom(Artifact):
     def _find_relocations(self, xml=None):
         if xml is None:
             xml = self._xml
-        dependencies = set()
+        dependencies = {}
         # process distributionManagement for relocation
         relocation = xml.find("distributionManagement/relocation")
         if relocation is not None:
@@ -237,7 +244,8 @@ class Pom(Artifact):
             else:
                 version = self._replace_properties(version)
 
-            dependencies.add(self._pom_factory(group, artifact, version))
+            dependencies.setdefault("relocation", set()).add(
+                self._pom_factory(group, artifact, version))
 
         return dependencies
 
@@ -277,19 +285,23 @@ class Pom(Artifact):
     @property
     @memoize("_dependencies")
     def dependencies(self):
-        dependencies = set()
+        dependencies = {}
 
         # we depend on our parent
         if self.parent is not None:
-            dependencies.add(self.parent)
+            dependencies.setdefault("compile", set()).add(self.parent)
 
-        dependencies.update(self._find_import_deps())
-        dependencies.update(self._find_compile_deps())
-        dependencies.update(self._find_relocations())
+        for key, value in itertools.chain(
+                self._find_import_deps().iteritems(),
+                self._find_deps().iteritems(),
+                self._find_relocations().iteritems()):
+            dependencies.setdefault(key, set()).update(value)
 
         for profile in self._find_profiles():
-            dependencies.update(self._find_compile_deps(profile))
-            dependencies.update(self._find_relocations(profile))
+            for key, value in itertools.chain(
+                    self._find_deps(profile).iteritems(),
+                    self._find_relocations(profile).iteritems()):
+                dependencies.setdefault(key, set()).update(value)
 
         return dependencies
 

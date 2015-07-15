@@ -88,10 +88,11 @@ class TestPom(unittest.TestCase):
             client = self._mock_client(*args)
             pom = Pom(coordinate, client)
             client.get_artifact.assert_called_with(coordinate)
-            assert len(pom.dependencies) == 1
-            assert list(pom.dependencies)[0].group_id == "foo"
-            assert list(pom.dependencies)[0].artifact_id == "bar"
-            assert list(pom.dependencies)[0].version == "1"
+            assert len(pom.dependencies["relocation"]) == 1
+            relocations = list(pom.dependencies["relocation"])
+            assert relocations[0].group_id == "foo"
+            assert relocations[0].artifact_id == "bar"
+            assert relocations[0].version == "1"
 
     def test_find_prereqs(self):
         """Test Pom._find_prerequisites()"""
@@ -111,7 +112,7 @@ class TestPom(unittest.TestCase):
 
         import_deps = pom._find_import_deps()
         assert len(import_deps) == 1
-        assert list(import_deps)[0].coordinate == "foo:parent:pom:1"
+        assert list(import_deps["import"])[0].coordinate == "foo:parent:pom:1"
 
     def test_dependency_management(self):
         """Test Pom.dependency_management"""
@@ -124,19 +125,26 @@ class TestPom(unittest.TestCase):
         assert ("2.0.0", None, True) == dep_mgmt[("com.test", "project1")]
         assert ("1.0.0", None, False) == dep_mgmt[("com.test", "project2")]
 
-    def test_compile_deps(self):
-        client = self._mock_client(COM_TEST_USE, COM_TEST_BOM, COM_TEST_BOM2,
-                                   COM_TEST_PROJECT1, COM_TEST_PROJECT2)
-        pom = Pom("com.test:use:1.0.0", client)
+    def test_deps(self):
+        client = self._mock_client(COM_TEST_DEP, COM_TEST_PROJECT1,
+                                   COM_TEST_PROJECT2)
+        pom = Pom("com.test:dep:1.0.0", client)
 
-        assert len(pom.dependencies) == 2
+        compile_deps = list(pom.dependencies["compile"])
+        runtime_deps = list(pom.dependencies["runtime"])
+
+        assert len(compile_deps) == 1
+        assert "com.test:project1:pom:1.0.0" == compile_deps[0].coordinate
+
+        assert len(runtime_deps) == 1
+        assert "com.test:project2:pom:1.0.0" == runtime_deps[0].coordinate
 
     def test_dependency_version_range(self):
         client = self._mock_client(COM_TEST_PROJECT3)
         client.find_artifacts.return_value = []
         pom = Pom("com.test:project3:1.0.0", client)
 
-        self.assertRaises(errors.MissingArtifactError, pom._find_compile_deps)
+        self.assertRaises(errors.MissingArtifactError, pom._find_deps)
 
         client = self._mock_client(COM_TEST_PROJECT3, COM_TEST_PROJECT2)
         client.find_artifacts.return_value = [
@@ -145,19 +153,21 @@ class TestPom(unittest.TestCase):
             ]
         pom = Pom("com.test:project3:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "1.0.0" == deps[0].version
+        assert len(pom.dependencies) == 1
+
+        deps = list(pom.dependencies["compile"])
+        assert len(deps) == 1
+        assert deps[0].coordinate == "com.test:project2:pom:1.0.0"
 
         client = self._mock_client(COM_TEST_PROJECT4, COM_TEST_PROJECT2)
         client.get_maven_metadata.return_value = COM_TEST_METADATA
         pom = Pom("com.test:project4:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "1.0.0" == deps[0].version
+        assert len(pom.dependencies) == 1
+
+        deps = list(pom.dependencies["compile"])
+        assert len(deps) == 1
+        assert deps[0].coordinate == "com.test:project2:pom:1.0.0"
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release",
@@ -167,10 +177,11 @@ class TestPom(unittest.TestCase):
         client.get_maven_metadata.return_value = COM_TEST_METADATA
         pom = Pom("com.test:project4:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "2.0.0" == deps[0].version
+        assert len(pom.dependencies) == 1
+
+        deps = list(pom.dependencies["compile"])
+        assert len(deps) == 1
+        assert deps[0].coordinate == "com.test:project2:pom:2.0.0"
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release",
@@ -180,10 +191,11 @@ class TestPom(unittest.TestCase):
         client.get_maven_metadata.return_value = COM_TEST_METADATA
         pom = Pom("com.test:project4:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "1.0.0" == deps[0].version
+        assert len(pom.dependencies) == 1
+
+        deps = list(pom.dependencies["compile"])
+        assert len(deps) == 1
+        assert deps[0].coordinate == "com.test:project2:pom:1.0.0"
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release",
@@ -193,19 +205,20 @@ class TestPom(unittest.TestCase):
         client.get_maven_metadata.return_value = COM_TEST_METADATA
         pom = Pom("com.test:project4:1.0.0", client)
 
-        deps = list(pom.dependencies)
-        assert "com.test" == deps[0].group_id
-        assert "project2" == deps[0].artifact_id
-        assert "2.0.0" == deps[0].version
+        assert len(pom.dependencies) == 1
+
+        deps = list(pom.dependencies["compile"])
+        assert len(deps) == 1
+        assert deps[0].coordinate == "com.test:project2:pom:2.0.0"
 
     def test_profiles(self):
         client = self._mock_client(COM_TEST_PROFILE_1, COM_TEST_PROJECT1)
         pom = Pom("com.test:profile:1.0.0", client)
 
         assert "true" == pom.properties["active_profile"]
-        assert list(pom.dependencies)[0].group_id == "com.test"
-        assert list(pom.dependencies)[0].artifact_id == "project1"
-        assert list(pom.dependencies)[0].version == "1.0.0"
+        assert list(pom.dependencies["compile"])[0].group_id == "com.test"
+        assert list(pom.dependencies["compile"])[0].artifact_id == "project1"
+        assert list(pom.dependencies["compile"])[0].version == "1.0.0"
 
         for input, expected in (
                 ("[1.5,", "true"),
@@ -267,6 +280,29 @@ COM_TEST_PROFILE_1 = """\
 </project>
 """
 
+COM_TEST_DEP = """\
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.test</groupId>
+    <artifactId>project1</artifactId>
+    <version>1.0.0</version>
+    <dependencies>
+        <dependency>
+            <groupId>com.test</groupId>
+            <artifactId>project1</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.test</groupId>
+            <artifactId>project2</artifactId>
+            <version>1.0.0</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+</project>
+"""
+
 COM_TEST_PROFILE_2 = """\
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -294,6 +330,7 @@ COM_TEST_PROFILE_2 = """\
     </profiles>
 </project>
 """
+
 COM_TEST_PROJECT1 = """\
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -355,7 +392,7 @@ COM_TEST_METADATA = """\
     <artifactId>project2</artifactId>
     <versioning>
         <latest>2.0.0</latest>
-        <release>1.0.0.</release>
+        <release>1.0.0</release>
         <versions>
             <version>2.0.0</version>
             <version>1.0.0</version>
