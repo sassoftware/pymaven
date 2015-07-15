@@ -16,6 +16,7 @@
 
 
 import itertools
+import logging
 import re
 
 from lxml import etree
@@ -33,6 +34,8 @@ POM_PARSER = etree.XMLParser(
     )
 PROPERTY_RE = re.compile(r'\$\{(.*?)\}')
 STRIP_NAMESPACE_RE = re.compile(r"<project(.|\s)*?>")
+
+log = logging.getLogger(__name__)
 
 
 class Pom(Artifact):
@@ -118,6 +121,8 @@ class Pom(Artifact):
                     version = spec
 
                 if version is None:
+                    log.error("unable to resolve %s dependency %s:%s:%s", scope,
+                              group, artifact, spec)
                     raise errors.MissingArtifactError(
                         "%s:%s:%s" % (group, artifact, spec))
 
