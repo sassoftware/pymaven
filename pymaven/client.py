@@ -97,7 +97,7 @@ class Cache(object):
         return hpath, dhpath
 
     def cache(self, res, method, uri, query_params=None):
-        """ Access the cache for a request response
+        """Access the cache for a request response
 
         :param str method: HTTP method
         :param str uri: location to requests
@@ -289,8 +289,8 @@ class HttpRepository(AbstractRepository):
         if not res:
             log.debug("requesting %s %s", method, url)
             res = requests.request(method, url, **kwargs)
-            res.raise_for_status()
             res = self._cache.cache(res, method, uri, kwargs.get("params"))
+            res.raise_for_status()
         if json:
             return res.json()
         return res
