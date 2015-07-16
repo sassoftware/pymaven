@@ -84,50 +84,43 @@ class Pom(Artifact):
             else:
                 optional = False
 
-            if not optional:
-                # this is a required dependency
-                if elem.findtext("version") is not None:
-                    spec = self._replace_properties(elem.findtext("version"))
+            # this is a required dependency
+            if elem.findtext("version") is not None:
+                spec = self._replace_properties(elem.findtext("version"))
 
-                if spec is None:
-                    # FIXME: Default to the latest released version if no
-                    # version is specified. I'm not sure if this is the
-                    # correct behavior, but let's try it for now.
-                    spec = 'latest.release'
+            if spec is None:
+                # FIXME: Default to the latest released version if no
+                # version is specified. I'm not sure if this is the
+                # correct behavior, but let's try it for now.
+                spec = 'latest.release'
 
-                if elem.findtext("scope") is not None:
-                    scope = elem.findtext("scope")
+            if elem.findtext("scope") is not None:
+                scope = elem.findtext("scope")
 
-                # if scope is None, then it should be "compile"
-                if scope is None:
-                    scope = "compile"
+            # if scope is None, then it should be "compile"
+            if scope is None:
+                scope = "compile"
 
-                if any(ch for ch in spec if ch in self.RANGE_CHARS):
-                    available_versions = self._client.find_artifacts(
-                        "%s:%s" % (group, artifact))
-                    version = self.pick_version(spec, available_versions)
-                elif spec.lower() in ("latest.release", "release",
-                                      "latest.integration", "latest"):
-                    metadata = self._client.get_maven_metadata(
-                        "%s:%s" % (group, artifact))
-                    metadata = etree.fromstring(metadata)
-                    if (spec.lower() == "latest.release"
-                            or spec.lower() == "release"):
-                        version = metadata.findtext("versioning/release")
-                    elif (spec.lower() == "latest.integration"
-                            or spec.lower() == "latest"):
-                        version = metadata.findtext("versioning/latest")
-                else:
-                    version = spec
+            if any(ch for ch in spec if ch in self.RANGE_CHARS):
+                available_versions = self._client.find_artifacts(
+                    "%s:%s:%s" % (group, artifact, spec))
+                version = self.pick_version(spec, available_versions)
+            elif spec.lower() in ("latest.release", "release",
+                                  "latest.integration", "latest"):
+                available_versions = self._client.find_artifacts(
+                    "%s:%s" % (group, artifact))
+                version = self.pick_version(spec, available_versions)
+            else:
+                version = spec
 
-                if version is None:
-                    log.error("unable to resolve %s dependency %s:%s:%s", scope,
-                              group, artifact, spec)
-                    raise errors.MissingArtifactError(
-                        "%s:%s:%s" % (group, artifact, spec))
+            if version is None:
+                log.error("unable to resolve %s dependency %s:%s:%s", scope,
+                            group, artifact, spec)
+                raise errors.MissingArtifactError(
+                    "%s:%s:%s" % (group, artifact, spec))
 
-                dependencies.setdefault(scope, set()).add(
-                    self._pom_factory(group, artifact, version))
+            dependencies.setdefault(scope, set()).add(
+                ((group, artifact, version), not optional))
 
         return dependencies
 
@@ -161,7 +154,7 @@ class Pom(Artifact):
                 self.dependency_management[(group, artifact)]
             if scope == "import":
                 dependencies.setdefault(scope, set()).add(
-                    self._pom_factory(group, artifact, version))
+                    ((group, artifact, version), not optional))
 
         return dependencies
 
@@ -250,7 +243,7 @@ class Pom(Artifact):
                 version = self._replace_properties(version)
 
             dependencies.setdefault("relocation", set()).add(
-                self._pom_factory(group, artifact, version))
+                ((group, artifact, version), True))
 
         return dependencies
 
@@ -282,6 +275,13 @@ class Pom(Artifact):
         :return: the newest version that matches the spec
         :rtype: str or None
         """
+        if spec in ("latest.release", "release"):
+            for a in artifacts:
+                if 'snapshot' not in str(a.version.version).lower():
+                    return str(a.version)
+        elif spec in ("latest.integration", "latest"):
+            return str(artifacts[0].version)
+
         range = VersionRange.fromstring(spec)
         for artifact in artifacts:
             if artifact.version in range:
@@ -294,7 +294,11 @@ class Pom(Artifact):
 
         # we depend on our parent
         if self.parent is not None:
-            dependencies.setdefault("compile", set()).add(self.parent)
+            group = self.parent.group_id
+            artifact = self.parent.artifact_id
+            version = self.parent.version
+            dependencies.setdefault("compile", set()).add(
+                ((group, artifact, version), True))
 
         for key, value in itertools.chain(
                 self._find_import_deps().iteritems(),
@@ -381,7 +385,7 @@ class Pom(Artifact):
 
     def iter_build_dependencies(self):
         return itertools.chain(
-            self.dependencies.get("compile", set()),
-            self.dependencies.get("import", set()),
-            self.dependencies.get("relocations", set()),
+            (d for d, r in self.dependencies.get("compile", set()) if r),
+            (d for d, r in self.dependencies.get("import", set()) if r),
+            (d for d, r in self.dependencies.get("relocation", set()) if r),
             )
