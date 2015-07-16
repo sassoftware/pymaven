@@ -289,8 +289,12 @@ class HttpRepository(AbstractRepository):
         if not res:
             log.debug("requesting %s %s", method, url)
             res = requests.request(method, url, **kwargs)
-            res = self._cache.cache(res, method, uri, kwargs.get("params"))
-            res.raise_for_status()
+            try:
+                res.raise_for_status()
+            except requests.HTTPError:
+                raise
+            finally:
+                res = self._cache.cache(res, method, uri, kwargs.get("params"))
         if json:
             return res.json()
         return res
