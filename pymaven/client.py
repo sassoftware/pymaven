@@ -119,6 +119,7 @@ class Cache(object):
         with open(dhpath, "wb") as fh:
             json.dump({
                 "status_code": res.status_code,
+                "reason": res.reason,
                 "method": method,
                 "uri": uri,
                 "param": query_params,
@@ -289,12 +290,11 @@ class HttpRepository(AbstractRepository):
         if not res:
             log.debug("requesting %s %s", method, url)
             res = requests.request(method, url, **kwargs)
-            try:
-                res.raise_for_status()
-            except requests.HTTPError:
-                raise
-            finally:
-                res = self._cache.cache(res, method, uri, kwargs.get("params"))
+            res = self._cache.cache(res, method, uri, kwargs.get("params"))
+
+        if res.status_code != requests.codes.ok:
+            raise requests.HTTPError(res.reason)
+
         if json:
             return res.json()
         return res
