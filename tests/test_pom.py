@@ -138,12 +138,6 @@ class TestPom(unittest.TestCase):
         assert runtime_deps[0] == (("com.test", "project2", "1.0.0"), True)
 
     def test_dependency_version_range(self):
-        client = self._mock_client(COM_TEST_PROJECT3)
-        client.find_artifacts.return_value = []
-        pom = Pom("com.test:project3:1.0.0", client)
-
-        self.assertRaises(errors.MissingArtifactError, pom._find_deps)
-
         client = self._mock_client(COM_TEST_PROJECT3, COM_TEST_PROJECT2)
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0"),
@@ -154,7 +148,7 @@ class TestPom(unittest.TestCase):
         deps = list(pom.dependencies["compile"])
         assert len(pom.dependencies) == 1
         assert len(deps) == 1
-        assert deps[0] == (("com.test", "project2", "1.0.0"), True)
+        assert deps[0] == (("com.test", "project2", "[1.0,2.0)"), True)
 
         client = self._mock_client(COM_TEST_PROJECT4)
         client.find_artifacts.return_value = [
@@ -166,7 +160,7 @@ class TestPom(unittest.TestCase):
         deps = list(pom.dependencies["compile"])
         assert len(pom.dependencies) == 1
         assert len(deps) == 1
-        assert deps[0] == (("com.test", "project2", "1.0.0"), True)
+        assert deps[0] == (("com.test", "project2", "release"), True)
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release", "version>latest"))
@@ -179,7 +173,7 @@ class TestPom(unittest.TestCase):
         deps = list(pom.dependencies["compile"])
         assert len(pom.dependencies) == 1
         assert len(deps) == 1
-        assert deps[0] == (("com.test", "project2", "2.0.0-SNAPSHOT"), True)
+        assert deps[0] == (("com.test", "project2", "latest"), True)
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release",
@@ -193,7 +187,7 @@ class TestPom(unittest.TestCase):
         deps = list(pom.dependencies["compile"])
         assert len(pom.dependencies) == 1
         assert len(deps) == 1
-        assert deps[0] == (("com.test", "project2", "1.0.0"), True)
+        assert deps[0] == (("com.test", "project2", "latest.release"), True)
 
         client = self._mock_client(
             COM_TEST_PROJECT4.replace("version>release",
@@ -207,7 +201,7 @@ class TestPom(unittest.TestCase):
         deps = list(pom.dependencies["compile"])
         assert len(pom.dependencies) == 1
         assert len(deps) == 1
-        assert deps[0] == (("com.test", "project2", "2.0.0-SNAPSHOT"), True)
+        assert deps[0] == (("com.test", "project2", "latest.integration"), True)
 
     def test_profiles(self):
         client = self._mock_client(COM_TEST_PROFILE_1, COM_TEST_PROJECT1)

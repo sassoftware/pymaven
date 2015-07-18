@@ -74,10 +74,10 @@ class Pom(Artifact):
             artifact = self._replace_properties(elem.findtext("artifactId"))
 
             if (group, artifact) in self.dependency_management:
-                spec, scope, optional = \
+                version, scope, optional = \
                     self.dependency_management[(group, artifact)]
             else:
-                spec = scope = optional = None
+                version = scope = optional = None
 
             if elem.findtext("optional") is not None:
                 optional = (elem.findtext("optional") == "true")
@@ -86,13 +86,13 @@ class Pom(Artifact):
 
             # this is a required dependency
             if elem.findtext("version") is not None:
-                spec = self._replace_properties(elem.findtext("version"))
+                version = self._replace_properties(elem.findtext("version"))
 
-            if spec is None:
+            if version is None:
                 # FIXME: Default to the latest released version if no
                 # version is specified. I'm not sure if this is the
                 # correct behavior, but let's try it for now.
-                spec = 'latest.release'
+                version = 'latest.release'
 
             if elem.findtext("scope") is not None:
                 scope = elem.findtext("scope")
@@ -100,24 +100,6 @@ class Pom(Artifact):
             # if scope is None, then it should be "compile"
             if scope is None:
                 scope = "compile"
-
-            if any(ch for ch in spec if ch in self.RANGE_CHARS):
-                available_versions = self._client.find_artifacts(
-                    "%s:%s:%s" % (group, artifact, spec))
-                version = self.pick_version(spec, available_versions)
-            elif spec.lower() in ("latest.release", "release",
-                                  "latest.integration", "latest"):
-                available_versions = self._client.find_artifacts(
-                    "%s:%s" % (group, artifact))
-                version = self.pick_version(spec, available_versions)
-            else:
-                version = spec
-
-            if version is None:
-                log.error("unable to resolve %s dependency %s:%s:%s", scope,
-                            group, artifact, spec)
-                raise errors.MissingArtifactError(
-                    "%s:%s:%s" % (group, artifact, spec))
 
             dependencies.setdefault(scope, set()).add(
                 ((group, artifact, version), not optional))
