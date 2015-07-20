@@ -83,15 +83,16 @@ class Pom(Artifact):
             else:
                 optional = False
 
-            # this is a required dependency
             if elem.findtext("version") is not None:
-                version = self._replace_properties(elem.findtext("version"))
+                version = elem.findtext("version")
 
             if version is None:
                 # FIXME: Default to the latest released version if no
                 # version is specified. I'm not sure if this is the
                 # correct behavior, but let's try it for now.
                 version = 'latest.release'
+            else:
+                version = self._replace_properties(version)
 
             if elem.findtext("scope") is not None:
                 scope = elem.findtext("scope")
