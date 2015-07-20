@@ -21,7 +21,6 @@ import re
 
 from lxml import etree
 
-from . import errors
 from .artifact import Artifact
 from .utils import memoize
 from .versioning import VersionRange
@@ -49,8 +48,9 @@ class Pom(Artifact):
 
     def __init__(self, coordinate, client):
         super(Pom, self).__init__(coordinate)
+        self.type = "pom"
         self._client = client
-        with client.get_artifact(self._coordinate).contents as fh:
+        with client.get_artifact(self.coordinate).contents as fh:
             xml = fh.read()
         self._xml = etree.fromstring(
             STRIP_NAMESPACE_RE.sub('<project>', xml[xml.find('<project'):], 1),

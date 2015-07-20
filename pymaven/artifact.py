@@ -38,10 +38,9 @@ class Artifact(object):
     """Represents an artifact within a maven repository."""
 
     __slots__ = ("group_id", "artifact_id", "version", "type", "classifier",
-                 "contents", "_coordinate")
+                 "contents")
 
     def __init__(self, coordinate):
-        self._coordinate = coordinate
         self.version = None
         self.type = "jar"
         self.classifier = None
@@ -103,7 +102,7 @@ class Artifact(object):
         return result
 
     def __hash__(self):
-        return hash((self._coordinate, self.version, self.type,
+        return hash((self.group_id, self.artifact_id, self.version, self.type,
                      self.classifier))
 
     def __str__(self):
@@ -121,7 +120,14 @@ class Artifact(object):
 
     @property
     def coordinate(self):
-        return self._coordinate
+        coordinate = "%s:%s" % (self.group_id, self.artifact_id)
+        if self.type != "jar":
+            coordinate += ":%s" % self.type
+        if self.classifier is not None:
+            coordinate += ":%s" % self.classifier
+        if self.version is not None:
+            coordinate += ":%s" % self.version
+        return coordinate
 
     @property
     def path(self):
