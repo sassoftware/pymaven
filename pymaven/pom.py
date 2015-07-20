@@ -243,6 +243,9 @@ class Pom(Artifact):
         result = PROPERTY_RE.sub(subfunc, text)
         while result and PROPERTY_RE.match(result):
             result = PROPERTY_RE.sub(subfunc, result)
+
+        if not result:
+            result = text
         return result.strip()
 
     def pick_version(self, spec, artifacts):

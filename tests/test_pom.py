@@ -76,6 +76,11 @@ class TestPom(unittest.TestCase):
         assert "a string" == pom._replace_properties("${prop2}", properties)
         assert "baz version string" == pom._replace_properties("${bazChild}")
         assert "baz version string" == pom._replace_properties("${bazVersion}")
+        assert "${unmatched}" == pom._replace_properties("${unmatched}")
+        assert "${parentProp}" == \
+            pom.parent._replace_properties("${parentProp}")
+        assert "resolve" == pom._replace_properties("${resolveProp}")
+        assert "resolve" == pom._replace_properties("${parentProp}")
 
     def test_find_relocations(self):
         """Test Pom._find_relocations()"""
@@ -610,6 +615,7 @@ FOO_BAR_1_POM = """\
     <artifactId>bar</artifactId>
     <properties>
         <bazChild>${bazVersion}</bazChild>
+        <resolveProp>resolve</resolveProp>
     </properties>
 </project>
 """
@@ -622,6 +628,7 @@ FOO_PARENT_1_POM = """\
     <artifactId>parent</artifactId>
     <version>1</version>
     <properties>
+        <parentProp>${resolveProp}</parentProp>
         <bazVersion>baz version string
 </bazVersion>
     </properties>
