@@ -116,7 +116,7 @@ class Artifact(object):
         return s
 
     def __repr__(self):
-        return "<pymaven.Artifact(%r)" % self._coordinate
+        return "<pymaven.Artifact(%r)" % self.coordinate
 
     @property
     def coordinate(self):
