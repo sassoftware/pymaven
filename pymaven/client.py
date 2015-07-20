@@ -205,6 +205,9 @@ class MavenClient(object):
         :rtype: :py:class:`pymaven.Artifact`
         """
         query = Artifact(coordinate)
+        if query.version.version is None:
+            query = self.find_artifacts(coordinate)[0]
+
         for repo in self._repos:
             if repo.exists(query.path):
                 query.contents = repo.open(query.path)
