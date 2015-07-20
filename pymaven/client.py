@@ -190,7 +190,7 @@ class MavenClient(object):
         """
         query = Artifact(coordinate)
         assert query.version.version is not None, \
-            "Cannot get metadat for version range"
+            "Cannot get metadata for version range"
 
         if query.type != "pom":
             query.type = "pom"
