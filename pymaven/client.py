@@ -238,8 +238,16 @@ class AbstractRepository(object):
             if version_range is None:
                 version_range = VersionRange("[,)")
 
+            # base coordinate for all return values is everything up to the
+            # version of the query
+            base_coordinate = "%s:%s" % (query.group_id, query.artifact_id)
+            if query.classifier:
+                base_coordinate += "%s:%s" % (query.type, query.classifier)
+            elif query.type != "jar":
+                base_coordinate += ":%s" % query.type
+
             return sorted([
-                Artifact(':'.join([query.group_id, query.artifact_id, version]))
+                Artifact(':'.join([base_coordinate, version]))
                 for version in self.listdir(query.path)
                 if version in version_range], reverse=True)
 
