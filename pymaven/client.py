@@ -230,7 +230,6 @@ class AbstractRepository(object):
 
     def get_versions(self, coordinate):
         query = Artifact(coordinate)
-        query.type = "pom"
         if self.exists(query.path):
             if query.version and query.version.version:
                 return [Artifact(coordinate)]
