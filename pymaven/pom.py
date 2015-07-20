@@ -282,7 +282,7 @@ class Pom(Artifact):
             artifact = self.parent.artifact_id
             version = self.parent.version
             dependencies.setdefault("compile", set()).add(
-                ((group, artifact, version), True))
+                ((group, artifact, str(version)), True))
 
         for key, value in itertools.chain(
                 self._find_import_deps().iteritems(),
