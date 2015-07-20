@@ -67,6 +67,7 @@ class TestMavenClient(unittest.TestCase):
 
     @mock.patch("pymaven.client.LocalRepository")
     def test_get_artifact(self, _LocalRepository):
+
         _repo = mock.Mock(spec=LocalRepository)
 
         _repo.exists.side_effect = [True, False]
@@ -75,6 +76,7 @@ class TestMavenClient(unittest.TestCase):
         _LocalRepository.return_value = _repo
 
         client = MavenClient("/maven")
+
         actual = client.get_artifact("foo:bar:2.0.0")
         assert "some data" == actual.contents.read()
         _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
@@ -84,6 +86,9 @@ class TestMavenClient(unittest.TestCase):
                           "foo:bar:3.0")
         _repo.exists.assert_called_with("foo/bar/3.0/bar-3.0.jar")
         _repo.open.assert_not_called()
+
+        self.assertRaises(AssertionError, client.get_artifact,
+                          "foo:bar:[1.0,2.0]")
 
 
 @mock.patch("pymaven.client.HttpRepository._request")

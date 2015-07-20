@@ -189,7 +189,12 @@ class MavenClient(object):
         :rtype: :py:class:`pymaven.pom.Pom`
         """
         query = Artifact(coordinate)
-        query.type = "pom"
+        assert query.version.version is not None, \
+            "Cannot get metadat for version range"
+
+        if query.type != "pom":
+            query.type = "pom"
+
         for repo in self._repos:
             if repo.exists(query.path):
                 return Pom(coordinate, self)
@@ -205,23 +210,13 @@ class MavenClient(object):
         :rtype: :py:class:`pymaven.Artifact`
         """
         query = Artifact(coordinate)
-        if query.version.version is None:
-            query = self.find_artifacts(coordinate)[0]
+        assert query.version.version is not None, \
+            "Cannot get artifact for version range"
 
         for repo in self._repos:
             if repo.exists(query.path):
                 query.contents = repo.open(query.path)
                 return query
-        else:
-            raise MissingArtifactError(coordinate)
-
-    def get_maven_metadata(self, coordinate):
-        query = Artifact(coordinate)
-        path = os.path.dirname(query.path)
-        path = os.path.join(path, "maven-metadata.xml")
-        for repo in self._repos:
-            if repo.exists(path):
-                return repo.open(path)
         else:
             raise MissingArtifactError(coordinate)
 

@@ -22,7 +22,6 @@ import mock
 
 from pymaven import Artifact
 from pymaven import VersionRange as VR
-from pymaven import errors
 from pymaven.client import MavenClient
 from pymaven.client import Struct
 from pymaven.pom import Pom
@@ -81,10 +80,10 @@ class TestPom(unittest.TestCase):
     def test_find_relocations(self):
         """Test Pom._find_relocations()"""
         for args, coordinate in (
-                ((RELOCATION_1, FOO_BAR_1_POM), "foo.org:bar:1"),
-                ((RELOCATION_2, FOO_BAR_1_POM), "foo:baz:1"),
-                ((RELOCATION_3, FOO_BAR_1_POM), "foo:bar:alpha"),
-                ((RELOCATION_4, FOO_BAR_1_POM), "foo.org:baz:alpha"),
+                ((RELOCATION_1, FOO_BAR_1_POM), "foo.org:bar:pom:1"),
+                ((RELOCATION_2, FOO_BAR_1_POM), "foo:baz:pom:1"),
+                ((RELOCATION_3, FOO_BAR_1_POM), "foo:bar:pom:alpha"),
+                ((RELOCATION_4, FOO_BAR_1_POM), "foo.org:baz:pom:alpha"),
                 ):
             client = self._mock_client(*args)
             pom = Pom(coordinate, client)
