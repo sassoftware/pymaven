@@ -57,7 +57,7 @@ setup(
     author="Walter Scheper",
     author_email="Walter.Scheper@sas.com",
     license="Apache License 2.0",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=read_file("requirements.txt"),
     tests_require=["pytest", "mock"],
     cmdclass={"test": PyTest},
