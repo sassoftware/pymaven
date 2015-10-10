@@ -101,7 +101,7 @@ class Cache(object):
 
         :param str method: HTTP method
         :param str uri: location to requests
-        :param dict query_params: query paramaters
+        :param dict query_params: query parameters
         :param requests.Response res: a request response to cache
         :return: the cached response
         """
@@ -181,7 +181,7 @@ class MavenClient(object):
         return sorted(artifacts, reverse=True)
 
     def get_metadata(self, coordinate):
-        """Return the metadata associated with the coorindates
+        """Return the metadata associated with the coordinates
 
         :param str coordinate: maven coordinate
         :raises: :py:exc:`pymaven.errors.MissingArtifactError`

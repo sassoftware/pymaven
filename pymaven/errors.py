@@ -22,7 +22,7 @@ Exceptions used by pymaven
 
 # Generic errors
 class PymavenError(Exception):
-    """Base class for all errrors in PymavenError
+    """Base class for all errors in PymavenError
 
     Do not raise directly, but make a subclass
     """
@@ -48,7 +48,7 @@ class MissingPathError(RepositoryError):
 
 # Maven Client errors
 class ClientError(PymavenError):
-    """Generic erors raied by maven clients"""
+    """Generic errors raised by maven clients"""
 
 
 class MissingArtifactError(ClientError):

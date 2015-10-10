@@ -32,7 +32,7 @@ def memoize(name):
 
 
 def pad(seq, target_length, padding=None):
-    """Extend the sequence *seq* with *padding* (default: None) if the lenght
+    """Extend the sequence *seq* with *padding* (default: None) if the length
     of *seq* is less than *target_length*. Modifies *seq* in place.
 
     >>> pad([], 5, 1)
@@ -59,7 +59,7 @@ def _first_of_each(*args, **kwargs):
 
 
 def urljoin(*parts):
-    """Join urls in a less suprising manner than urlparse.urljoin
+    """Join urls in a less surprising manner than urlparse.urljoin
 
     Inspired by this stackoverflow question:
     http://codereview.stackexchange.com/questions/13027/joining-url-path-components-intelligently
