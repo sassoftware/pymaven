@@ -15,12 +15,6 @@
 #
 
 
-try:
-    from xml.etree import cElementTree as ElementTree
-except ImportError:
-    from xml.etree import ElementTree
-
-from urlparse import urlparse
 import getpass
 import hashlib
 import json
@@ -28,7 +22,9 @@ import logging
 import os
 import posixpath
 
+from six.moves.urllib.parse import urlparse
 import requests
+import six
 
 from . import utils
 from .artifact import Artifact
@@ -37,6 +33,10 @@ from .errors import MissingPathError
 from .pom import Pom
 from .versioning import VersionRange
 
+try:
+    from xml.etree import cElementTree as ElementTree
+except ImportError:
+    from xml.etree import ElementTree
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class Cache(object):
         if cacheDir is None:
             cacheDir = "/tmp/%s-maven-cache" % getpass.getuser()
         if not os.path.exists(cacheDir):
-            os.makedirs(cacheDir, mode=0700)
+            os.makedirs(cacheDir, mode=0o700)
         self.cacheDir = cacheDir
 
     def _gen_key(self, method, uri, query_params):
@@ -155,7 +155,7 @@ class MavenClient(object):
     """ Client for talking to a maven repository
     """
     def __init__(self, *urls):
-        if isinstance(urls, basestring):
+        if isinstance(urls, six.string_types):
             urls = [urls]
         self._repos = []
         for url in urls:

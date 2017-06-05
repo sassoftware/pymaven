@@ -15,12 +15,11 @@
 #
 
 
-from StringIO import StringIO
 import os
 import tempfile
 import unittest
 
-import mock
+from six import StringIO
 import requests
 
 from pymaven import Artifact
@@ -28,8 +27,13 @@ from pymaven.client import HttpRepository
 from pymaven.client import LocalRepository
 from pymaven.client import MavenClient
 from pymaven.client import Struct
-from pymaven.errors import MissingPathError
 from pymaven.errors import MissingArtifactError
+from pymaven.errors import MissingPathError
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class TestMavenClient(unittest.TestCase):
@@ -67,7 +71,36 @@ class TestMavenClient(unittest.TestCase):
 
     @mock.patch("pymaven.client.LocalRepository")
     def test_get_artifact(self, _LocalRepository):
+        _repo = mock.Mock(spec=LocalRepository)
 
+        _repo.exists.side_effect = [True]
+        _repo.open.return_value = StringIO("some data")
+
+        _LocalRepository.return_value = _repo
+
+        client = MavenClient("/maven")
+        actual = client.get_artifact("foo:bar:2.0.0")
+        assert "some data" == actual.contents.read()
+        _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
+        _repo.open.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
+
+    @mock.patch("pymaven.client.LocalRepository")
+    def test_get_artifact_missing(self, _LocalRepository):
+        _repo = mock.Mock(spec=LocalRepository)
+
+        _repo.exists.side_effect = [False]
+        _repo.open.return_value = StringIO("some data")
+
+        _LocalRepository.return_value = _repo
+
+        client = MavenClient("/maven")
+        self.assertRaises(MissingArtifactError, client.get_artifact,
+                          "foo:bar:3.0")
+        _repo.exists.assert_called_with("foo/bar/3.0/bar-3.0.jar")
+        _repo.open.assert_not_called()
+
+    @mock.patch("pymaven.client.LocalRepository")
+    def test_get_artifact_version_range(self, _LocalRepository):
         _repo = mock.Mock(spec=LocalRepository)
 
         _repo.exists.side_effect = [True, False]
@@ -76,19 +109,6 @@ class TestMavenClient(unittest.TestCase):
         _LocalRepository.return_value = _repo
 
         client = MavenClient("/maven")
-
-        actual = client.get_artifact("foo:bar:2.0.0")
-        assert "some data" == actual.contents.read()
-        _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
-        _repo.open.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
-
-        _repo.reset_mock()
-        self.assertRaises(MissingArtifactError, client.get_artifact,
-                          "foo:bar:3.0")
-        _repo.exists.assert_called_with("foo/bar/3.0/bar-3.0.jar")
-        _repo.open.assert_not_called()
-
-        _repo.reset_mock()
         self.assertRaises(AssertionError, client.get_artifact,
                           "foo:bar:[1.0,2.0]")
         _repo.open.assert_not_called()
@@ -183,7 +203,7 @@ class TestLocalRepository(unittest.TestCase):
     def test_open(self):
         with tempfile.NamedTemporaryFile() as tmp:
             repo = LocalRepository(os.path.dirname(tmp.name))
-            tmp.write("the file\n")
+            tmp.write(b"the file\n")
             tmp.flush()
             with repo.open(tmp.name) as fh:
                 assert "the file\n" == fh.read()

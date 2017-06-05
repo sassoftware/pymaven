@@ -15,16 +15,20 @@
 #
 
 
-from StringIO import StringIO
 import unittest
 
-import mock
+from six import StringIO
 
-from pymaven import Artifact
 from pymaven import VersionRange as VR
+from pymaven import Artifact
 from pymaven.client import MavenClient
 from pymaven.client import Struct
 from pymaven.pom import Pom
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class TestPom(unittest.TestCase):

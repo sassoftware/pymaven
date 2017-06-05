@@ -20,11 +20,11 @@ import logging
 import re
 
 from lxml import etree
+import six
 
 from .artifact import Artifact
 from .utils import memoize
 from .versioning import VersionRange
-
 
 POM_PARSER = etree.XMLParser(
     recover=True,
@@ -286,15 +286,15 @@ class Pom(Artifact):
                 ((group, artifact, str(version)), True))
 
         for key, value in itertools.chain(
-                self._find_import_deps().iteritems(),
-                self._find_deps().iteritems(),
-                self._find_relocations().iteritems()):
+                six.iteritems(self._find_import_deps()),
+                six.iteritems(self._find_deps()),
+                six.iteritems(self._find_relocations())):
             dependencies.setdefault(key, set()).update(value)
 
         for profile in self._find_profiles():
             for key, value in itertools.chain(
-                    self._find_deps(profile).iteritems(),
-                    self._find_relocations(profile).iteritems()):
+                    six.iteritems(self._find_deps(profile)),
+                    six.iteritems(self._find_relocations(profile))):
                 dependencies.setdefault(key, set()).update(value)
 
         return dependencies
