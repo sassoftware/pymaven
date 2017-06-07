@@ -16,10 +16,13 @@
 
 
 from functools import wraps
+from io import IOBase
+from io import open
 import posixpath
 
 from six.moves.urllib.parse import urlsplit
 from six.moves.urllib.parse import urlunsplit
+import requests
 
 
 def cmp(x, y):
@@ -70,6 +73,20 @@ def pad(seq, target_length, padding=None):
     if length < target_length:
         seq.extend([padding] * (target_length - length))
     return seq
+
+
+def parse_source(source):
+    """Parse ``source`` and return a file-like object"""
+    if isinstance(source, IOBase):
+        return source
+    source_t = urlsplit(source)
+    if source_t.scheme == "http" or source_t.scheme == "https":
+        resp = requests.get(source, stream=True)
+        resp.raise_for_status()
+        return resp.raw
+    if source_t.scheme == "file" or not source_t.scheme:
+        return open(source_t.path, encoding="utf-8")
+    raise TypeError("source must be a file name/path, file-like object, or URL")
 
 
 def _first_of_each(*args, **kwargs):
