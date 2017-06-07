@@ -82,13 +82,16 @@ class TestMavenClient(unittest.TestCase):
         _repo.exists.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
         _repo.open.assert_called_with("foo/bar/2.0.0/bar-2.0.0.jar")
 
+        _repo.reset_mock()
         self.assertRaises(MissingArtifactError, client.get_artifact,
                           "foo:bar:3.0")
         _repo.exists.assert_called_with("foo/bar/3.0/bar-3.0.jar")
         _repo.open.assert_not_called()
 
+        _repo.reset_mock()
         self.assertRaises(AssertionError, client.get_artifact,
                           "foo:bar:[1.0,2.0]")
+        _repo.open.assert_not_called()
 
 
 @mock.patch("pymaven.client.HttpRepository._request")
