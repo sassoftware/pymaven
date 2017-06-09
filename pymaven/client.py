@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import posixpath
+import tempfile
 
 from six.moves.urllib.parse import urlparse
 import requests
@@ -73,7 +74,7 @@ class Cache(object):
     """
     def __init__(self, cacheDir=None):
         if cacheDir is None:
-            cacheDir = "/tmp/%s-maven-cache" % getpass.getuser()
+            cacheDir = tempfile.mkdtemp(prefix=getpass.getuser())
         if not os.path.exists(cacheDir):
             os.makedirs(cacheDir, mode=0o700)
         self.cacheDir = cacheDir
