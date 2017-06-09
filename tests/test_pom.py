@@ -15,16 +15,21 @@
 #
 
 
-from StringIO import StringIO
 import unittest
 
-import mock
+from six import BytesIO
+import six
 
-from pymaven import Artifact
 from pymaven import VersionRange as VR
+from pymaven import Artifact
 from pymaven.client import MavenClient
 from pymaven.client import Struct
 from pymaven.pom import Pom
+
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 
 class TestPom(unittest.TestCase):
@@ -35,17 +40,18 @@ class TestPom(unittest.TestCase):
         for arg in args:
             a = mock.MagicMock(spec=Artifact)
             a.contents = mock.MagicMock(spec=Struct)
-            a.contents.__enter__.return_value = StringIO(arg)
+            if isinstance(arg, six.string_types):
+                arg = arg.encode("utf-8")
+            a.contents.__enter__.return_value = BytesIO(arg)
             side_effect.append(a)
-
         client.get_artifact.side_effect = side_effect
         return client
 
     def test_parent(self):
         """Test pom parent processing"""
-        client = self._mock_client(FOO_BAR_1_POM, FOO_PARENT_1_POM)
+        client = self._mock_client(FOO_PARENT_1_POM)
 
-        pom = Pom("foo:bar:1", client)
+        pom = Pom.fromstring("foo:bar:1", FOO_BAR_1_POM, client)
         assert pom.parent.group_id == "foo"
         assert pom.parent.artifact_id == "parent"
         assert pom.parent.version == "1"
@@ -92,7 +98,6 @@ class TestPom(unittest.TestCase):
                 ):
             client = self._mock_client(*args)
             pom = Pom(coordinate, client)
-            client.get_artifact.assert_called_with(coordinate)
             assert len(pom.dependencies["relocation"]) == 1
             relocations = list(pom.dependencies["relocation"])
             assert relocations[0] == (("foo", "bar", VR("1")), True)
