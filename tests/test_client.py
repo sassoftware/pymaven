@@ -19,16 +19,14 @@ import os
 import tempfile
 import unittest
 
-from six import StringIO
 import requests
 
+from six import StringIO
+
 from pymaven import Artifact
-from pymaven.client import HttpRepository
-from pymaven.client import LocalRepository
-from pymaven.client import MavenClient
-from pymaven.client import Struct
-from pymaven.errors import MissingArtifactError
-from pymaven.errors import MissingPathError
+from pymaven.client import HttpRepository, LocalRepository, MavenClient, Struct
+from pymaven.errors import MissingArtifactError, MissingPathError
+
 
 try:
     from unittest import mock
@@ -47,25 +45,28 @@ class TestMavenClient(unittest.TestCase):
 
         _LocalRepository.side_effect = [_repo1, _repo2]
 
-        _repo1.get_versions.return_value = [Artifact("foo:bar:2.0"),
-                                            Artifact("foo:bar:2.0-SNAPSHOT"),
-                                            Artifact("foo:bar:1.0"),
-                                            Artifact("foo:bar:1.0-SNAPSHOT"),
-                                            ]
+        _repo1.get_versions.return_value = [
+            Artifact("foo:bar:2.0"),
+            Artifact("foo:bar:2.0-SNAPSHOT"),
+            Artifact("foo:bar:1.0"),
+            Artifact("foo:bar:1.0-SNAPSHOT"),
+        ]
 
-        _repo2.get_versions.return_value = [Artifact("foo:bar:3.0"),
-                                            Artifact("foo:bar:3.0-SNAPSHOT"),
-                                            Artifact("foo:bar:1.0"),
-                                            Artifact("foo:bar:1.0-SNAPSHOT"),
-                                            ]
+        _repo2.get_versions.return_value = [
+            Artifact("foo:bar:3.0"),
+            Artifact("foo:bar:3.0-SNAPSHOT"),
+            Artifact("foo:bar:1.0"),
+            Artifact("foo:bar:1.0-SNAPSHOT"),
+        ]
         client = MavenClient("foobar", "foobaz")
-        expected = [Artifact("foo:bar:3.0"),
-                    Artifact("foo:bar:3.0-SNAPSHOT"),
-                    Artifact("foo:bar:2.0"),
-                    Artifact("foo:bar:2.0-SNAPSHOT"),
-                    Artifact("foo:bar:1.0"),
-                    Artifact("foo:bar:1.0-SNAPSHOT"),
-                    ]
+        expected = [
+            Artifact("foo:bar:3.0"),
+            Artifact("foo:bar:3.0-SNAPSHOT"),
+            Artifact("foo:bar:2.0"),
+            Artifact("foo:bar:2.0-SNAPSHOT"),
+            Artifact("foo:bar:1.0"),
+            Artifact("foo:bar:1.0-SNAPSHOT"),
+        ]
         actual = client.find_artifacts("foo:bar")
         assert expected == actual, "client.find_artifacts(%s)" % input
 
@@ -94,8 +95,7 @@ class TestMavenClient(unittest.TestCase):
         _LocalRepository.return_value = _repo
 
         client = MavenClient("/maven")
-        self.assertRaises(MissingArtifactError, client.get_artifact,
-                          "foo:bar:3.0")
+        self.assertRaises(MissingArtifactError, client.get_artifact, "foo:bar:3.0")
         _repo.exists.assert_called_with("foo/bar/3.0/bar-3.0.jar")
         _repo.open.assert_not_called()
 
@@ -109,8 +109,7 @@ class TestMavenClient(unittest.TestCase):
         _LocalRepository.return_value = _repo
 
         client = MavenClient("/maven")
-        self.assertRaises(AssertionError, client.get_artifact,
-                          "foo:bar:[1.0,2.0]")
+        self.assertRaises(AssertionError, client.get_artifact, "foo:bar:[1.0,2.0]")
         _repo.open.assert_not_called()
 
 
@@ -120,12 +119,13 @@ class TestHttpRespository(unittest.TestCase):
         res = mock.MagicMock(spec=Struct)
         res.__enter__.return_value = StringIO(SIMPLE_METADATA)
         _request.side_effect = [res, requests.exceptions.HTTPError]
-        expected = ["1.0-SNAPSHOT",
-                    "1.0",
-                    "3.0-SNAPSHOT",
-                    "2.0.0",
-                    "1.1",
-                    ]
+        expected = [
+            "1.0-SNAPSHOT",
+            "1.0",
+            "3.0-SNAPSHOT",
+            "2.0.0",
+            "1.1",
+        ]
         repo = HttpRepository("http://foo.com/repo")
         actual = repo.listdir("foo/bar")
         assert expected == actual
@@ -138,21 +138,24 @@ class TestHttpRespository(unittest.TestCase):
 
         repo = HttpRepository("http://foo.com/repo")
         for input, expected in (
-                ("foo:bar", [Artifact("foo:bar:3.0-SNAPSHOT"),
-                             Artifact("foo:bar:2.0.0"),
-                             Artifact("foo:bar:1.1"),
-                             Artifact("foo:bar:1.0"),
-                             Artifact("foo:bar:1.0-SNAPSHOT"),
-                             ]),
-                ("foo:bar:1.0", [Artifact("foo:bar:1.0")]),
-                ("foo:bar:[1.0]", [Artifact("foo:bar:1.0")]),
-                ("foo:bar:[1.0,2.0)", [Artifact("foo:bar:1.1"),
-                                       Artifact("foo:bar:1.0"),
-                                       ]),
-                ("foo:bar:[2.0,3.0)", [Artifact("foo:bar:3.0-SNAPSHOT"),
-                                       Artifact("foo:bar:2.0.0"),
-                                       ]),
-                ):
+            (
+                "foo:bar",
+                [
+                    Artifact("foo:bar:3.0-SNAPSHOT"),
+                    Artifact("foo:bar:2.0.0"),
+                    Artifact("foo:bar:1.1"),
+                    Artifact("foo:bar:1.0"),
+                    Artifact("foo:bar:1.0-SNAPSHOT"),
+                ],
+            ),
+            ("foo:bar:1.0", [Artifact("foo:bar:1.0")]),
+            ("foo:bar:[1.0]", [Artifact("foo:bar:1.0")]),
+            ("foo:bar:[1.0,2.0)", [Artifact("foo:bar:1.1"), Artifact("foo:bar:1.0")]),
+            (
+                "foo:bar:[2.0,3.0)",
+                [Artifact("foo:bar:3.0-SNAPSHOT"), Artifact("foo:bar:2.0.0")],
+            ),
+        ):
             actual = repo.get_versions(input)
             assert expected == actual, "HttpRepository.get_versions(%s)" % input
             # reset res contents
@@ -172,33 +175,36 @@ class TestHttpRespository(unittest.TestCase):
 class TestLocalRepository(unittest.TestCase):
     @mock.patch("pymaven.client.os")
     def test_get_versions(self, _os):
-        _os.listdir.return_value = ["1.0-SNAPSHOT",
-                                    "2.0.0",
-                                    "3.0-SNAPSHOT",
-                                    "1.1",
-                                    "1.0",
-                                    ]
+        _os.listdir.return_value = [
+            "1.0-SNAPSHOT",
+            "2.0.0",
+            "3.0-SNAPSHOT",
+            "1.1",
+            "1.0",
+        ]
         repo = LocalRepository("/maven")
 
         for input, expected in (
-                ("foo:bar", [Artifact("foo:bar:3.0-SNAPSHOT"),
-                             Artifact("foo:bar:2.0.0"),
-                             Artifact("foo:bar:1.1"),
-                             Artifact("foo:bar:1.0"),
-                             Artifact("foo:bar:1.0-SNAPSHOT"),
-                             ]),
-                ("foo:bar:1.0", [Artifact("foo:bar:1.0")]),
-                ("foo:bar:[1.0]", [Artifact("foo:bar:1.0")]),
-                ("foo:bar:[1.0,2.0)", [Artifact("foo:bar:1.1"),
-                                       Artifact("foo:bar:1.0"),
-                                       ]),
-                ("foo:bar:[2.0,3.0)", [Artifact("foo:bar:3.0-SNAPSHOT"),
-                                       Artifact("foo:bar:2.0.0"),
-                                       ]),
-                ):
+            (
+                "foo:bar",
+                [
+                    Artifact("foo:bar:3.0-SNAPSHOT"),
+                    Artifact("foo:bar:2.0.0"),
+                    Artifact("foo:bar:1.1"),
+                    Artifact("foo:bar:1.0"),
+                    Artifact("foo:bar:1.0-SNAPSHOT"),
+                ],
+            ),
+            ("foo:bar:1.0", [Artifact("foo:bar:1.0")]),
+            ("foo:bar:[1.0]", [Artifact("foo:bar:1.0")]),
+            ("foo:bar:[1.0,2.0)", [Artifact("foo:bar:1.1"), Artifact("foo:bar:1.0")]),
+            (
+                "foo:bar:[2.0,3.0)",
+                [Artifact("foo:bar:3.0-SNAPSHOT"), Artifact("foo:bar:2.0.0")],
+            ),
+        ):
             actual = repo.get_versions(input)
-            assert expected == actual, \
-                "LocalRepository.get_versions(%s)" % input
+            assert expected == actual, "LocalRepository.get_versions(%s)" % input
 
     def test_open(self):
         with tempfile.NamedTemporaryFile() as tmp:

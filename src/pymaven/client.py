@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-
+import abc
 import getpass
 import hashlib
 import json
@@ -23,43 +23,45 @@ import os
 import posixpath
 import tempfile
 
-from six.moves.urllib.parse import urlparse
 import requests
 import six
 
+from six.moves.urllib.parse import urlparse
+
 from . import utils
 from .artifact import Artifact
-from .errors import MissingArtifactError
-from .errors import MissingPathError
+from .errors import MissingArtifactError, MissingPathError
 from .pom import Pom
 from .versioning import VersionRange
+
 
 try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
-    from xml.etree import ElementTree
+    from xml.etree import ElementTree  # type: ignore
 
 log = logging.getLogger(__name__)
 
 
 class Struct(object):
-    """ Simple object to mimic a requests.Response object
     """
+    Simple object to mimic a requests.Response object
+    """
+
     def __init__(self):
         self.status_code = None
         self.content = None
         self._json = None
 
     def __enter__(self):
-        self._content = open(self.content, 'rb')
+        self._content = open(self.content, "rb")
         return self._content
 
     def __exit__(self, exc_type, exc_value, traceback):
         self._content.close()
 
-    @property
     @utils.memoize("_json")
-    def json(self):
+    def _get_json(self):
         with self as fh:
             return json.load(fh)
 
@@ -68,10 +70,14 @@ class Struct(object):
             for chunk in fh.read(size):
                 yield chunk
 
+    json = property(_get_json)
+
 
 class Cache(object):
-    """ Local http cache
     """
+    Local http cache
+    """
+
     def __init__(self, cacheDir=None):
         if cacheDir is None:
             cacheDir = tempfile.mkdtemp(prefix=getpass.getuser())
@@ -82,8 +88,7 @@ class Cache(object):
     def _gen_key(self, method, uri, query_params):
         key = method + " " + uri
         if query_params:
-            key += "?" + "&".join(
-                ("%s=%s" % kv for kv in query_params.iteritems()))
+            key += "?" + "&".join(("%s=%s" % kv for kv in query_params.iteritems()))
 
         return key
 
@@ -118,13 +123,16 @@ class Cache(object):
             for chunk in res.iter_content(1024):
                 fh.write(chunk)
         with open(dhpath, "wb") as fh:
-            json.dump({
-                "status_code": res.status_code,
-                "reason": res.reason,
-                "method": method,
-                "uri": uri,
-                "param": query_params,
-            }, fh)
+            json.dump(
+                {
+                    "status_code": res.status_code,
+                    "reason": res.reason,
+                    "method": method,
+                    "uri": uri,
+                    "param": query_params,
+                },
+                fh,
+            )
 
         res = self._get(hpath, dhpath)
         return res
@@ -155,6 +163,7 @@ class Cache(object):
 class MavenClient(object):
     """ Client for talking to a maven repository
     """
+
     def __init__(self, *urls):
         if isinstance(urls, six.string_types):
             urls = [urls]
@@ -190,8 +199,9 @@ class MavenClient(object):
         :rtype: :py:class:`pymaven.pom.Pom`
         """
         query = Artifact(coordinate)
-        assert query.version.version is not None, \
-            "Cannot get metadata for version range"
+        assert (
+            query.version.version is not None
+        ), "Cannot get metadata for version range"
 
         if query.type != "pom":
             query.type = "pom"
@@ -211,8 +221,9 @@ class MavenClient(object):
         :rtype: :py:class:`pymaven.Artifact`
         """
         query = Artifact(coordinate)
-        assert query.version.version is not None, \
-            "Cannot get artifact for version range"
+        assert (
+            query.version.version is not None
+        ), "Cannot get artifact for version range"
 
         for repo in self._repos:
             if repo.exists(query.path):
@@ -222,12 +233,32 @@ class MavenClient(object):
             raise MissingArtifactError(coordinate)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class AbstractRepository(object):
     """
     Abstract class, this defines the interface that all repositories implement
     """
+
     def __init__(self, url):
         self._url = url
+
+    @abc.abstractmethod
+    def _exists(self, path):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _listdir(self, path):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _open(self, path):
+        raise NotImplementedError
+
+    def exists(self, path):
+        """Return ``True`` if *path* exists in the repository, ``False``
+        otherwise
+        """
+        return self._exists(path)
 
     def get_versions(self, coordinate):
         query = Artifact(coordinate)
@@ -247,16 +278,14 @@ class AbstractRepository(object):
             elif query.type != "jar":
                 base_coordinate += ":%s" % query.type
 
-            return sorted([
-                Artifact(':'.join([base_coordinate, version]))
-                for version in self.listdir(query.path)
-                if version in version_range], reverse=True)
-
-    def exists(self, path):
-        """Return ``True`` if *path* exists in the repository, ``False``
-        otherwise
-        """
-        return self._exists(path)
+            return sorted(
+                [
+                    Artifact(":".join([base_coordinate, version]))
+                    for version in self.listdir(query.path)
+                    if version in version_range
+                ],
+                reverse=True,
+            )
 
     def listdir(self, path):
         """List contents of *path*
@@ -278,6 +307,7 @@ class AbstractRepository(object):
 class HttpRepository(AbstractRepository):
     """ Access a maven repository via http
     """
+
     def __init__(self, url, username=None, password=None):
         super(HttpRepository, self).__init__(url)
         self._cache = Cache()
@@ -318,9 +348,11 @@ class HttpRepository(AbstractRepository):
         with res as fh:
             metadata = ElementTree.parse(fh)
 
-        return [elem.text.strip()
-                for elem in metadata.findall("versioning/versions/version")
-                if elem is not None]
+        return [
+            elem.text.strip()
+            for elem in metadata.findall("versioning/versions/version")
+            if elem is not None
+        ]
 
     def _open(self, path):
         res = self._get(path, stream=True)
@@ -330,6 +362,7 @@ class HttpRepository(AbstractRepository):
 class LocalRepository(AbstractRepository):
     """A local disk-based repository
     """
+
     def _join(self, *args):
         return os.path.join(self._url, *args)
 

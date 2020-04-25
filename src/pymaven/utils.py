@@ -15,14 +15,14 @@
 #
 
 
-from functools import wraps
-from io import IOBase
-from io import open
 import posixpath
 
-from six.moves.urllib.parse import urlsplit
-from six.moves.urllib.parse import urlunsplit
+from functools import wraps
+from io import IOBase, open
+
 import requests
+
+from six.moves.urllib.parse import urlsplit, urlunsplit
 
 
 def cmp(x, y):
@@ -46,10 +46,14 @@ def memoize(name):
     def wrap(func):
         @wraps(func)
         def wrapper(slf, *args, **kwargs):
-            if getattr(slf, name) is None:
-                setattr(slf, name, func(slf, *args, **kwargs))
-            return getattr(slf, name)
+            result = getattr(slf, name, None)
+            if result is None:
+                result = func(slf, *args, **kwargs)
+                setattr(slf, name, result)
+            return result
+
         return wrapper
+
     return wrap
 
 
@@ -129,9 +133,11 @@ def urljoin(*parts):
     >>> urljoin('#anchor', '?param=1&other=2', 'bar', 'http://foo.com')
     'http://foo.com/bar?param=1&other=2#anchor'
     """
-    schemes, netlocs, paths, queries, fragments = \
-        zip(*[urlsplit(part) for part in parts])
-    scheme, netloc, query, fragment = _first_of_each(schemes, netlocs, queries,
-                                                     fragments)
-    path = posixpath.normpath(posixpath.join(*paths) or '/')
+    schemes, netlocs, paths, queries, fragments = zip(
+        *[urlsplit(part) for part in parts]
+    )
+    scheme, netloc, query, fragment = _first_of_each(
+        schemes, netlocs, queries, fragments
+    )
+    path = posixpath.normpath(posixpath.join(*paths) or "/")
     return urlunsplit((scheme, netloc, path, query, fragment))

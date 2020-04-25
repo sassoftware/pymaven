@@ -16,7 +16,21 @@
 
 
 from .artifact import Artifact
-from .versioning import Version
-from .versioning import VersionRange
+from .client import MavenClient
+from .pom import Pom
+from .versioning import Version, VersionRange
 
-__all__ = ["Artifact", "Version", "VersionRange"]
+
+__all__ = ["Artifact", "MavenClient", "Pom", "Version", "VersionRange"]
+
+__version__ = "0.3.0.dev0"
+
+__title__ = "pymaven"
+__description__ = "Maven client written in Python"
+__url__ = "https://github.com/sassoftware/pymaven"
+
+__author__ = "Walter Scheper"
+__email__ = "Walter.Scheper@sas.com"
+
+__license__ = "Apache 2.0"
+__copyright__ = "Copyright (c) SAS Institute Inc"

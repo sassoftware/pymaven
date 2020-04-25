@@ -1,0 +1,1 @@
+Pom objects can now be loaded from a file or string and do not require a maven client.

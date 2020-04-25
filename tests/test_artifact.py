@@ -43,7 +43,7 @@ class TestArtifact(unittest.TestCase):
             ("foo.bar:baz:pkg:sources:1", "foo/bar/baz/1/baz-1-sources.pkg"),
             ("foo.bar:baz:pkg:javadoc:1", "foo/bar/baz/1/baz-1-javadoc.pkg"),
             ("foo.bar:baz:[1,2)", "foo/bar/baz"),
-            )
+        )
 
         for input, expected in test_pairs:
             artifact = Artifact(input)
@@ -72,7 +72,7 @@ class TestArtifact(unittest.TestCase):
             (Artifact("g:a:pom:2"), Artifact("g:a:war:1")),
             (Artifact("g:a:jar:c:2"), Artifact("g:a:1")),
             (Artifact("g:a:jar:a:2"), Artifact("g:a:jar:c:1")),
-            )
+        )
 
         for pair in test_pairs:
             self._assertArtifactOrder(*pair)

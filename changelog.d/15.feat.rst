@@ -1,0 +1,1 @@
+Reworked packaging and tox setup based on `this blog post <https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/>`_.

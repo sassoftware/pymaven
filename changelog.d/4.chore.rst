@@ -1,0 +1,2 @@
+Use `pbr <https://docs.openstack.org/pbr/latest/>`_ for release management.
+Added support for python 3.4, 3.5, and 3.6

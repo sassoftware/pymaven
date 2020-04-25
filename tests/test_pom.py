@@ -17,23 +17,23 @@
 
 import unittest
 
-from six import BytesIO
 import six
 
-from pymaven import VersionRange as VR
+from six import BytesIO
+
 from pymaven import Artifact
-from pymaven.client import MavenClient
-from pymaven.client import Struct
+from pymaven import VersionRange as VR
+from pymaven.client import MavenClient, Struct
 from pymaven.pom import Pom
+
 
 try:
     from unittest import mock
 except ImportError:
-    import mock
+    import mock  # type: ignore
 
 
 class TestPom(unittest.TestCase):
-
     def _mock_client(self, *args):
         client = mock.MagicMock(spec=MavenClient)
         side_effect = []
@@ -83,19 +83,18 @@ class TestPom(unittest.TestCase):
         assert "baz version string" == pom._replace_properties("${bazChild}")
         assert "baz version string" == pom._replace_properties("${bazVersion}")
         assert "${unmatched}" == pom._replace_properties("${unmatched}")
-        assert "${parentProp}" == \
-            pom.parent._replace_properties("${parentProp}")
+        assert "${parentProp}" == pom.parent._replace_properties("${parentProp}")
         assert "resolve" == pom._replace_properties("${resolveProp}")
         assert "resolve" == pom._replace_properties("${parentProp}")
 
     def test_find_relocations(self):
         """Test Pom._find_relocations()"""
         for args, coordinate in (
-                ((RELOCATION_1, FOO_BAR_1_POM), "foo.org:bar:pom:1"),
-                ((RELOCATION_2, FOO_BAR_1_POM), "foo:baz:pom:1"),
-                ((RELOCATION_3, FOO_BAR_1_POM), "foo:bar:pom:alpha"),
-                ((RELOCATION_4, FOO_BAR_1_POM), "foo.org:baz:pom:alpha"),
-                ):
+            ((RELOCATION_1, FOO_BAR_1_POM), "foo.org:bar:pom:1"),
+            ((RELOCATION_2, FOO_BAR_1_POM), "foo:baz:pom:1"),
+            ((RELOCATION_3, FOO_BAR_1_POM), "foo:bar:pom:alpha"),
+            ((RELOCATION_4, FOO_BAR_1_POM), "foo.org:baz:pom:alpha"),
+        ):
             client = self._mock_client(*args)
             pom = Pom(coordinate, client)
             assert len(pom.dependencies["relocation"]) == 1
@@ -114,8 +113,7 @@ class TestPom(unittest.TestCase):
 
     def test_find_import_deps(self):
         """Test Pom._find_import_deps()"""
-        client = self._mock_client(IMPORT_DEPS_1, FOO_PARENT_1_POM,
-                                   FOO_PARENT_1_POM)
+        client = self._mock_client(IMPORT_DEPS_1, FOO_PARENT_1_POM, FOO_PARENT_1_POM)
         pom = Pom("foo:bar:1", client)
 
         import_deps = list(pom._find_import_deps()["import"])
@@ -133,8 +131,7 @@ class TestPom(unittest.TestCase):
         assert ("1.0.0", None, False) == dep_mgmt[("com.test", "project2")]
 
     def test_deps(self):
-        client = self._mock_client(COM_TEST_DEP, COM_TEST_PROJECT1,
-                                   COM_TEST_PROJECT2)
+        client = self._mock_client(COM_TEST_DEP, COM_TEST_PROJECT1, COM_TEST_PROJECT2)
         pom = Pom("com.test:dep:1.0.0", client)
 
         compile_deps = list(pom.dependencies["compile"])
@@ -151,7 +148,7 @@ class TestPom(unittest.TestCase):
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0"),
             Artifact("com.test:project2:1.0.0"),
-            ]
+        ]
         pom = Pom("com.test:project3:1.0.0", client)
 
         deps = list(pom.dependencies["compile"])
@@ -163,7 +160,7 @@ class TestPom(unittest.TestCase):
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0-SNAPSHOT"),
             Artifact("com.test:project2:1.0.0"),
-            ]
+        ]
         pom = Pom("com.test:project4:1.0.0", client)
 
         deps = list(pom.dependencies["compile"])
@@ -172,11 +169,12 @@ class TestPom(unittest.TestCase):
         assert deps[0] == (("com.test", "project2", "release"), True)
 
         client = self._mock_client(
-            COM_TEST_PROJECT4.replace("version>release", "version>latest"))
+            COM_TEST_PROJECT4.replace("version>release", "version>latest")
+        )
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0-SNAPSHOT"),
             Artifact("com.test:project2:1.0.0"),
-            ]
+        ]
         pom = Pom("com.test:project4:1.0.0", client)
 
         deps = list(pom.dependencies["compile"])
@@ -185,12 +183,12 @@ class TestPom(unittest.TestCase):
         assert deps[0] == (("com.test", "project2", "latest"), True)
 
         client = self._mock_client(
-            COM_TEST_PROJECT4.replace("version>release",
-                                      "version>latest.release"))
+            COM_TEST_PROJECT4.replace("version>release", "version>latest.release")
+        )
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0-SNAPSHOT"),
             Artifact("com.test:project2:1.0.0"),
-            ]
+        ]
         pom = Pom("com.test:project4:1.0.0", client)
 
         deps = list(pom.dependencies["compile"])
@@ -199,12 +197,12 @@ class TestPom(unittest.TestCase):
         assert deps[0] == (("com.test", "project2", "latest.release"), True)
 
         client = self._mock_client(
-            COM_TEST_PROJECT4.replace("version>release",
-                                      "version>latest.integration"))
+            COM_TEST_PROJECT4.replace("version>release", "version>latest.integration")
+        )
         client.find_artifacts.return_value = [
             Artifact("com.test:project2:2.0.0-SNAPSHOT"),
             Artifact("com.test:project2:1.0.0"),
-            ]
+        ]
         pom = Pom("com.test:project4:1.0.0", client)
 
         deps = list(pom.dependencies["compile"])
@@ -221,29 +219,32 @@ class TestPom(unittest.TestCase):
         assert compile_deps[0] == (("com.test", "project1", VR("1.0.0")), True)
 
         for input, expected in (
-                ("[1.5,", "true"),
-                ("![1.5,", "false"),
-                ("!1.5", "true"),
-                ("1.5", "false"),
-                ("![1.5,1.7]", "true"),
-                ("[1.5,1.7]", "false"),
-                ("1.8", "true"),
-                ("!1.8", "false"),
-                ("[1.8,)", "true"),
-                ("![1.8,)", "false"),
-                ("![1.5,1.8)", "true"),
-                ("[1.5,1.8)", "false"),
-                ("![,1.8)", "true"),
-                ("[,1.8)", "false"),
-                ("[,1.8]", "true"),
-                ("![,1.8]", "false"),
-                ):
-            client = self._mock_client(
-                COM_TEST_PROFILE_2.replace("@JDK@", input))
+            ("[1.5,", "true"),
+            ("![1.5,", "false"),
+            ("!1.5", "true"),
+            ("1.5", "false"),
+            ("![1.5,1.7]", "true"),
+            ("[1.5,1.7]", "false"),
+            ("1.8", "true"),
+            ("!1.8", "false"),
+            ("[1.8,)", "true"),
+            ("![1.8,)", "false"),
+            ("![1.5,1.8)", "true"),
+            ("[1.5,1.8)", "false"),
+            ("![,1.8)", "true"),
+            ("[,1.8)", "false"),
+            ("[,1.8]", "true"),
+            ("![,1.8]", "false"),
+        ):
+            client = self._mock_client(COM_TEST_PROFILE_2.replace("@JDK@", input))
             pom = Pom("com.test:profile:1.0.0", client)
             actual = pom.properties["default_profile"]
-            assert expected == actual, \
-                "%s: Wanted %s, got %s" % (input, expected, actual)
+            assert expected == actual, "%s: Wanted %s, got %s" % (
+                input,
+                expected,
+                actual,
+            )
+
 
 COM_TEST_PROFILE_1 = """\
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

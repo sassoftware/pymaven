@@ -29,23 +29,23 @@ import six
 from .errors import ArtifactParseError
 from .versioning import VersionRange
 
+
 if sys.version_info > (2,):
     from .utils import cmp
 
 MAVEN_COORDINATE_RE = re.compile(
-    r'(?P<group_id>[^:]+)'
-    r':(?P<artifact_id>[^:]+)'
-    r'(:(?P<type>[^:]+)(:(?P<classifier>[^:]+))?)?'
-    r':(?P<version>[^:])'
-    )
+    r"(?P<group_id>[^:]+)"
+    r":(?P<artifact_id>[^:]+)"
+    r"(:(?P<type>[^:]+)(:(?P<classifier>[^:]+))?)?"
+    r":(?P<version>[^:])"
+)
 
 
 @functools.total_ordering
 class Artifact(object):
     """Represents an artifact within a maven repository."""
 
-    __slots__ = ("group_id", "artifact_id", "version", "type", "classifier",
-                 "contents")
+    __slots__ = ("group_id", "artifact_id", "version", "type", "classifier", "contents")
 
     def __init__(self, coordinate):
         self.version = None
@@ -53,25 +53,25 @@ class Artifact(object):
         self.classifier = None
         self.contents = None
 
-        parts = coordinate.split(':')
+        parts = coordinate.split(":")
         length = len(parts)
         if length < 2 or length > 5:
-            raise ArtifactParseError(
-                "Too many items in coordinate: '%s'" % coordinate)
+            raise ArtifactParseError("Too many items in coordinate: '%s'" % coordinate)
 
         self.group_id, self.artifact_id = parts[:2]
+        version = ""
         if length == 3:
-            self.version = parts[2]
+            version = parts[2]
         elif length == 4:
             self.type = parts[2]
-            self.version = parts[3]
+            version = parts[3]
         elif length == 5:
             self.type = parts[2]
             self.classifier = parts[3]
-            self.version = parts[4]
+            version = parts[4]
 
-        if self.version:
-            self.version = VersionRange(self.version)
+        if version:
+            self.version = VersionRange(version)
 
     def __cmp__(self, other):
         if self is other:
@@ -98,8 +98,7 @@ class Artifact(object):
                         else:
                             result = cmp(self.classifier, other.classifier)
                     if result == 0:
-                        result = cmp(self.version.version,
-                                     other.version.version)
+                        result = cmp(self.version.version, other.version.version)
         return result
 
     def __eq__(self, other):
@@ -112,17 +111,19 @@ class Artifact(object):
         return self.__cmp__(other) != 0
 
     def __hash__(self):
-        return hash((self.group_id, self.artifact_id, self.version, self.type,
-                     self.classifier))
+        return hash(
+            (self.group_id, self.artifact_id, self.version, self.type, self.classifier)
+        )
 
     def __str__(self):
-        s = ':'.join((self.group_id, self.artifact_id))
+        s = ":".join((self.group_id, self.artifact_id))
         if self.version:
-            s += ':' + self.type
+            s += ":" + self.type
             if self.classifier:
-                s += ':' + self.classifier
-            s += ':' + str(self.version.version if self.version.version
-                           else self.vserion)
+                s += ":" + self.classifier
+            s += ":" + str(
+                self.version.version if self.version.version else self.vserion
+            )
         return s
 
     def __repr__(self):
@@ -141,7 +142,7 @@ class Artifact(object):
 
     @property
     def path(self):
-        path = "%s/%s" % (self.group_id.replace('.', '/'), self.artifact_id)
+        path = "%s/%s" % (self.group_id.replace(".", "/"), self.artifact_id)
 
         if self.version and self.version.version:
             version = self.version.version

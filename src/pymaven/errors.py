@@ -22,18 +22,19 @@ Exceptions used by pymaven
 
 # Generic errors
 class PymavenError(Exception):
-    """Base class for all errors in PymavenError
+    """
+    Base class for all errors in PymavenError
 
     Do not raise directly, but make a subclass
     """
+
     _template = None
 
     def __init__(self, *args, **kwargs):
-        if self._template is None:
-            super(PymavenError, self).__init__(*args, **kwargs)
-        else:
-            super(PymavenError, self).__init__(
-                self._template.format(*args, **kwargs))
+        if self._template is not None:
+            args = [self._template.format(*args, **kwargs)]
+            kwargs = dict()
+        super(PymavenError, self).__init__(*args, **kwargs)
 
 
 # Maven repo errors
@@ -43,6 +44,7 @@ class RepositoryError(PymavenError):
 
 class MissingPathError(RepositoryError):
     """Raised when a repository accesses a path that does not exist"""
+
     _template = "No such directory: {0}"
 
 
@@ -53,6 +55,7 @@ class ClientError(PymavenError):
 
 class MissingArtifactError(ClientError):
     """Raised when a client tries to fetch an artifact that does not exist"""
+
     _template = "No artifact found matching '{0}'"
 
 
