@@ -20,11 +20,17 @@ The artifact module provides objects and functions for working with artifacts
 in a maven repository
 """
 
+import functools
 import re
+import sys
+
+import six
 
 from .errors import ArtifactParseError
 from .versioning import VersionRange
 
+if sys.version_info > (2,):
+    from .utils import cmp
 
 MAVEN_COORDINATE_RE = re.compile(
     r'(?P<group_id>[^:]+)'
@@ -34,6 +40,7 @@ MAVEN_COORDINATE_RE = re.compile(
     )
 
 
+@functools.total_ordering
 class Artifact(object):
     """Represents an artifact within a maven repository."""
 
@@ -69,22 +76,18 @@ class Artifact(object):
     def __cmp__(self, other):
         if self is other:
             return 0
-
         if not isinstance(other, Artifact):
-            if isinstance(other, basestring):
+            if isinstance(other, six.string_types):
                 try:
                     return cmp(self, Artifact(other))
                 except ArtifactParseError:
                     pass
             return 1
-
         result = cmp(self.group_id, other.group_id)
         if result == 0:
             result = cmp(self.artifact_id, other.artifact_id)
-
             if result == 0:
                 result = cmp(self.type, other.type)
-
                 if result == 0:
                     if self.classifier is None:
                         if other.classifier is not None:
@@ -94,12 +97,19 @@ class Artifact(object):
                             result = -1
                         else:
                             result = cmp(self.classifier, other.classifier)
-
                     if result == 0:
                         result = cmp(self.version.version,
                                      other.version.version)
-
         return result
+
+    def __eq__(self, other):
+        return self.__cmp__(other) == 0
+
+    def __lt__(self, other):
+        return self.__cmp__(other) < 0
+
+    def __ne__(self, other):
+        return self.__cmp__(other) != 0
 
     def __hash__(self):
         return hash((self.group_id, self.artifact_id, self.version, self.type,

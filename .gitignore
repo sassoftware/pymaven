@@ -7,6 +7,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.eggs/
 env/
 build/
 develop-eggs/
@@ -53,3 +54,7 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# PBR
+AUTHORS
+ChangeLog
