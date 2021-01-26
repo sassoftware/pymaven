@@ -20,8 +20,8 @@ import unittest
 from six import BytesIO
 import six
 
-from pymaven import VersionRange as VR
 from pymaven import Artifact
+from pymaven import VersionRange as VR
 from pymaven.client import MavenClient
 from pymaven.client import Struct
 from pymaven.pom import Pom

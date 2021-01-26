@@ -47,8 +47,8 @@ ALIASES = {
 }
 
 
-def list2tuple(l):
-    return tuple(list2tuple(x) if isinstance(x, list) else x for x in l)
+def list2tuple(li):
+    return tuple(list2tuple(x) if isinstance(x, list) else x for x in li)
 
 
 @functools.total_ordering
@@ -460,17 +460,17 @@ class Version(object):
         else:
             raise RuntimeError("other is of invalid type: %s" % type(other))
 
-    def _list_compare(self, l, other):
+    def _list_compare(self, this, other):
         if other is None:
-            if len(l) == 0:
+            if len(this) == 0:
                 return 0
-            return self._compare(l[0], other)
+            return self._compare(this[0], other)
         if isinstance(other, int):
             return -1
         elif isinstance(other, six.string_types):
             return 1
         elif isinstance(other, (list, tuple)):
-            for left, right in zip_longest(l, other):
+            for left, right in zip_longest(this, other):
                 if left is None:
                     if right is None:
                         result = 0
@@ -485,41 +485,41 @@ class Version(object):
         else:
             raise RuntimeError("other is of invalid type: %s" % type(other))
 
-    def _new_list(self, l):
-        """Create a new sublist, append it to the current list and return the
+    def _new_list(self, old):
+        """Create a new sublist, append it to the old list and return the
         sublist
 
-        :param list l: list to add a sublist to
+        :param list old: list to add a sublist to
         :return: the sublist
         :rtype: list
         """
-        l = self._normalize(l)
+        old = self._normalize(old)
         sublist = []
-        l.append(sublist)
+        old.append(sublist)
         return sublist
 
-    def _normalize(self, l):
-        for item in l[::-1]:
+    def _normalize(self, li):
+        for item in li[::-1]:
             if not item:
-                l.pop()
+                li.pop()
             elif not isinstance(item, list):
                 break
-        return l
+        return li
 
-    def _string_compare(self, s, other):
-        """Compare string item `s` to `other`
+    def _string_compare(self, this, other):
+        """Compare string item `this` to `other`
 
-        :param str s: string item to compare
+        :param str this: string item to compare
         :param other: other item to compare
         :type other: int, str, list or None
         """
         if other is None:
-            return self._string_compare(s, "")
+            return self._string_compare(this, "")
 
         if isinstance(other, (int, list, tuple)):
             return -1
         elif isinstance(other, six.string_types):
-            s_value = self._string_value(s)
+            s_value = self._string_value(this)
             other_value = self._string_value(other)
             if s_value < other_value:
                 return -1

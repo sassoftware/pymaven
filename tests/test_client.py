@@ -201,14 +201,18 @@ class TestLocalRepository(unittest.TestCase):
                 "LocalRepository.get_versions(%s)" % input
 
     def test_open(self):
-        with tempfile.NamedTemporaryFile() as tmp:
-            repo = LocalRepository(os.path.dirname(tmp.name))
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(b"the file\n")
-            tmp.flush()
+
+        try:
+            repo = LocalRepository(os.path.dirname(tmp.name))
             with repo.open(tmp.name) as fh:
                 assert "the file\n" == fh.read()
 
-        self.assertRaises(MissingPathError, repo.open, "/does/not/exist")
+            self.assertRaises(MissingPathError, repo.open, "/does/not/exist")
+        finally:
+            # clean up temporary file
+            os.remove(tmp.name)
 
 
 SIMPLE_METADATA = """\
